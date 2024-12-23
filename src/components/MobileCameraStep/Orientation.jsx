@@ -122,7 +122,7 @@ function Orientation({
               }
             </div>
           </div>
-          <ProgressBar className='mt-4' value={(snapShotCount / MIN_SNAPSHOT_COUNT) * 100} />
+          <ProgressBar className='mt-4' value={parseInt((snapShotCount / MIN_SNAPSHOT_COUNT) * 100, 10)} />
           <div className="flex flex-col text-center mt-4">
             <div className="text-xs text-gray-500 mt-2">
             {snapShotCount === MIN_SNAPSHOT_COUNT ? (<>Snapshot covering you and your workspace?
