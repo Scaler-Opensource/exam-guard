@@ -32,8 +32,29 @@ function Orientation({
   const [snapshotCollected, setSnapshotCollected] = useState(false);
   const [snapShotCount, setSnapshotCount] = useState(0);
   const [previousSnapshot, setPreviousSnapshot] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
   const [countdown, setCountdown] = useState(5);
   const { enableProctoring } = useAppSelector((state) => state.workflow);
+
+  useEffect(() => {
+    const fetchImageUrl = async () => {
+      if (previousSnapshot) {
+        try {
+          const response = await fetch(previousSnapshot, {
+            headers: {
+              Accept: 'application/json',
+            },
+          });
+          const data = await response.json();
+          setImageUrl(data.url);
+        } catch (error) {
+          console.error('Error fetching image URL:', error);
+        }
+      }
+    };
+
+    fetchImageUrl();
+  }, [previousSnapshot]);
 
   const collectSnapshots = useCallback((snapShotData) => {
     const snapshotLength = snapShotData?.metadata?.length || 0;
@@ -112,9 +133,9 @@ function Orientation({
           {/* Snapshot section */}
           <div className={styles.snapshotPreview}>
             <div className={styles.snapshotImageContainer}>
-              {previousSnapshot
+              {imageUrl
                 ? <img className={styles.snapshotImage}
-                  src={previousSnapshot} alt="snapshot"/>
+                  src={imageUrl} alt="snapshot"/>
                 : (<div className="absolute top-1/2 right-1/2 transform translate-x-1/2 translate-y-[-50%]">
                     <Loader size='md'/>
                     <div className='text-xs text-center mt-2'>Collecting Snapshot...</div>
