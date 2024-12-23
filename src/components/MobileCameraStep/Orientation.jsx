@@ -17,6 +17,7 @@ import styles from './MobileCameraStep.module.scss';
 import { useAppSelector } from '@/hooks/reduxhooks';
 import SnapshotFailed from './SnapshotFailed';
 import Carousel from '@/ui/Carousel';
+import ProgressBar from '@/ui/ProgressBar';
 
 function Orientation({
   className, setSwitchModalOpen,
@@ -121,7 +122,8 @@ function Orientation({
               }
             </div>
           </div>
-         <div className="flex flex-col text-center mt-4">
+          <ProgressBar className='mt-4' value={(snapShotCount / MIN_SNAPSHOT_COUNT) * 100} />
+          <div className="flex flex-col text-center mt-4">
             <div className="text-xs text-gray-500 mt-2">
             {snapShotCount === MIN_SNAPSHOT_COUNT ? (<>Snapshot covering you and your workspace?
             {' '}
