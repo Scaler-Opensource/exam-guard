@@ -99,7 +99,7 @@ const DesktopCameraStep = () => {
               >
                 Click to view
               </a>{' '}
-              screen sharing setup guide
+              camera setup guide
         </p>
         {!enableProctoring && (
           <form 
@@ -110,7 +110,7 @@ const DesktopCameraStep = () => {
               }
             }}
           >
-            <div className='flex items-start mt-16 text-xs'>
+            <div className='flex items-start mt-16 text-sm'>
               <Checkbox
                 id='confirm'
                 className={`mt-1 mr-4 h-6 w-6`}
@@ -122,7 +122,7 @@ const DesktopCameraStep = () => {
               />
               <label 
                 htmlFor='confirm' 
-                className="text-sm text-gray-600"
+                className="text-sm text-gray-600 cursor-pointer"
               >
                 By clicking, you confirm that all your compatibility checks have
                 been successful. Failure to maintain them during the test may

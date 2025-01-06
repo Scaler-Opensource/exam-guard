@@ -83,6 +83,7 @@ const MobileCameraStep = () => {
         >
           <MemoizedPairing />
         </Tab>
+
         <Tab
           label='Camera Orientation'
           name={PAIRING_STEPS.orientation}
@@ -129,7 +130,7 @@ const MobileCameraStep = () => {
                   role="checkbox"
                   required={areAllSubstepsCompleted}
                 />
-                <label htmlFor='confirm' className='text-sm text-gray-600'>
+                <label htmlFor='confirm' className='text-sm text-gray-600 cursor-pointer'>
                   By clicking on this, you confirm that your mobile phone is paired
                   and will remain charged during the test. If disconnected,
                   you&apos;ll need to reconnect before being able to continue with

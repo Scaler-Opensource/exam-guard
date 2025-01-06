@@ -57,7 +57,7 @@ const ScreenShareStep = () => {
     <>
       <StepHeader
         stepNumber='1'
-        title='Enable Screen Share Permissions'
+        title='Share your Entire Screen'
         status={status}
       />
       <div className='mt-16'>
@@ -101,7 +101,7 @@ const ScreenShareStep = () => {
                 role="checkbox"
                 required={areAllSubstepsCompleted}
               />
-              <label htmlFor='confirm' className='text-sm text-base-200'>
+              <label htmlFor='confirm' className='text-sm text-base-200 cursor-pointer'>
                 By clicking on this, you confirm that you have shared your entire
                 screen and it will stay connected throughout the test. Failure to
                 do so may result in disqualification

@@ -64,12 +64,12 @@ export default function ScreenShareCard() {
           <div className='flex-1 p-16 grow'>
             <h3 className='text-xl font-semibold mb-2'>
               {screenShareState.status === 'completed'
-                ? 'Screen Sharing Successfully Checked'
+                ? 'Successfully shared your screen'
                 : 'Start Screen Share'}
             </h3>
             <p className='text-base-500 mb-6 text-sm'>
               {screenShareState.status === 'completed' ? (
-                'Screen Sharing is essential to make sure the assessment is happening in the fair manner'
+                'Sharing your entire screen is essential to make sure the assessment is happening in the fair manner'
               ) : (
                 <>
                   Click below to begin sharing your entire screen.
@@ -84,7 +84,7 @@ export default function ScreenShareCard() {
               <div className='flex items-center justify-between p-4 bg-gray-100 rounded-2xl text-sm'>
                 <span>scaler.com is sharing your screen</span>
                 <div className='flex gap-2'>
-                  <Button onClick={handleStop} size='xs' variant='secondary'>
+                  <Button onClick={handleStop} className='text-red-500' size='xs' variant='secondary'>
                     Stop Sharing
                   </Button>
                 </div>

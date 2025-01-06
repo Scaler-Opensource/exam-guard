@@ -77,7 +77,7 @@ const SystemChecksStep = () => {
                 role="checkbox"
                 required={areAllSubstepsCompleted}
               />
-              <label htmlFor='confirm' className='text-sm text-base-200'>
+              <label htmlFor='confirm' className='text-sm text-base-200 cursor-pointer'>
                 By clicking, you confirm that all your compatibility checks
                 remains same. Failure to maintain proper setup may result in
                 interruption.
