@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
 
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import {
@@ -39,6 +41,7 @@ const App = ({
   const { enableProctoring: enableProctoringState } = useAppSelector(
     (state) => state.workflow,
   );
+  const [proctoringInitialized, setProctoringInitialized] = useState(false);
   const [initialised, setInitialised] = useState(false);
   const enableProctoring = enableProctoringProp || enableProctoringState;
   const { enabled: enabledScreenshotConfig } = screenshotConfig;
@@ -48,6 +51,7 @@ const App = ({
   const { enabled: enabledFullScreenConfig } = config?.fullScreen ?? {
     enabled: true,
   };
+  console.log('enableProctoring', enableProctoring);
 
   const steps = useMemo(
     () => ({
@@ -175,6 +179,14 @@ const App = ({
     steps,
   ]);
 
+  const handleWorkflowComplete = useCallback(() => {
+    if (!proctoringInitialized) {
+      proctor.initializeProctoring();
+      setProctoringInitialized(true);
+    }
+    callbacks?.onWorkflowComplete?.();
+  }, [callbacks, proctor, proctoringInitialized]);
+
   useEffect(() => {
     const initializeProctoring = async () => {
       try {
@@ -186,7 +198,7 @@ const App = ({
         }
         dispatch(setAssessmentInfo(assessmentInfo));
         dispatch(setEnableProctoring(enableProctoring));
-        dispatch(setOnWorkflowComplete(callbacks?.onWorkflowComplete));
+        dispatch(setOnWorkflowComplete(handleWorkflowComplete));
         dispatch(setProctor(proctor));
         dispatch(setBulkStepEnabled(steps));
       } catch (error) {
@@ -198,8 +210,9 @@ const App = ({
       setInitialised(true);
     }
   }, [assessmentInfo, baseUrl, callbacks, compatibilityCheckConfig,
-    config, dispatch, disqualificationConfig, enableAllAlerts, enableProctoring,
-    enableProctoringState, eventsConfig, headerOptions, initialised,
+    config, dispatch, disqualificationConfig, enableAllAlerts,
+    enableProctoring, enableProctoringState, eventsConfig,
+    handleWorkflowComplete, headerOptions, initialised,
     mobilePairingConfig, mockModeEnabled, proctor, qrCodeConfig,
     screenshotConfig, snapshotConfig, steps]);
 

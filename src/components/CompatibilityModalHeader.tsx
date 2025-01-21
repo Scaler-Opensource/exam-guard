@@ -8,7 +8,7 @@ export default function CompatibilityModalHeader() {
 
   return (
     <div>
-      <img src={Logo} alt='Scaler Logo' className='h-6' />
+      <img src={assessmentInfo?.logo || Logo} alt='Scaler Logo' className='h-6' />
       <div className='mt-12'>
         <p className='text-base-200 text-base'>
           Hi {assessmentInfo?.userName}!

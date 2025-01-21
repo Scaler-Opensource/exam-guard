@@ -85,6 +85,7 @@ const workflowSlice = createSlice({
         state.activeStep = nextStepKey;
       } else {
         state.modalOpen = false;
+        state.enableProctoring = true;
         if (state.onWorkflowComplete) {
           state.onWorkflowComplete();
         }

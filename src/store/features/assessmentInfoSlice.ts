@@ -4,6 +4,7 @@ import { AssessmentInfoState } from '@/types/common';
 const initialState: AssessmentInfoState = {
   userName: '',
   assessmentName: '',
+  logo: '',
   proctor: null,
 };
 
@@ -16,6 +17,7 @@ const assessmentInfoSlice = createSlice({
         ...state,
         userName: action.payload.userName,
         assessmentName: action.payload.assessmentName,
+        logo: action.payload.logo,
       };
     },
     setProctor: (state, action) => {
@@ -26,6 +28,7 @@ const assessmentInfoSlice = createSlice({
     },
   },
 });
+
 
 export const { setAssessmentInfo, setProctor } = assessmentInfoSlice.actions;
 

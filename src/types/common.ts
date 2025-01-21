@@ -9,5 +9,6 @@ export interface RootState {
 export interface AssessmentInfoState {
   userName: string;
   assessmentName: string;
+  logo: string;
   proctor: Proctor | null;
 }
