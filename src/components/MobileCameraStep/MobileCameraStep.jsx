@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { ArrowRight } from 'lucide-react';
+import PositionGuideModal from './PositionGuideModal';
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
 import { evaluateParentStepStatus } from '@/utils/evaluateParentStepStatus';
@@ -36,6 +37,7 @@ const MobileCameraStep = () => {
   const { modalOpen } = useAppSelector((state) => state.workflow);
 
   const [isSwitchModalOpen, setSwitchModalOpen] = useState(false);
+  const [isPositionGuideModalOpen, setPositionGuideModalOpen] = useState(false);
   const { enableProctoring } = useAppSelector((state) => state.workflow);
 
   const areAllSubstepsCompleted = Object.values(subSteps).every(
@@ -67,6 +69,10 @@ const MobileCameraStep = () => {
     setSwitchModalOpen(false);
   }, []);
 
+  const handlePositionGuideModalClose = useCallback(() => {
+    setPositionGuideModalOpen(false);
+  }, []);
+
   return (
     <>
       <StepHeader
@@ -94,6 +100,7 @@ const MobileCameraStep = () => {
         >
           <MemoizedOrientation
             setSwitchModalOpen={setSwitchModalOpen}
+            setPositionGuideModalOpen={setPositionGuideModalOpen}
           />
         </Tab>
         <Tab
@@ -169,6 +176,10 @@ const MobileCameraStep = () => {
       <MemoizedSwitchPhoneModal
         isOpen={isSwitchModalOpen}
         onClose={handleModalClose}
+      />
+      <PositionGuideModal
+        isOpen={isPositionGuideModalOpen}
+        onClose={handlePositionGuideModalClose}
       />
     </>
   );

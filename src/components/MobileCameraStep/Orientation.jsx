@@ -20,7 +20,7 @@ import Carousel from '@/ui/Carousel';
 import ProgressBar from '@/ui/ProgressBar';
 
 function Orientation({
-  className, setSwitchModalOpen,
+  className, setSwitchModalOpen, setPositionGuideModalOpen,
 }) {
   const {
     setupMode,
@@ -35,6 +35,12 @@ function Orientation({
   const [imageUrl, setImageUrl] = useState(null);
   const [countdown, setCountdown] = useState(5);
   const { enableProctoring } = useAppSelector((state) => state.workflow);
+
+  useEffect(() => {
+    if (!enableProctoring) {
+      setPositionGuideModalOpen(true);
+    }
+  }, [enableProctoring, setPositionGuideModalOpen]);
 
   useEffect(() => {
     const fetchImageUrl = async () => {
@@ -70,8 +76,9 @@ function Orientation({
   const handleSnapshotSuccess = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);
     setSnapshotCount(MIN_SNAPSHOT_COUNT);
+    setPositionGuideModalOpen(false);
     setSnapshotCollected(true);
-  }, [collectSnapshots]);
+  }, [collectSnapshots, setPositionGuideModalOpen]);
 
   const handleSnapshotFailure = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);

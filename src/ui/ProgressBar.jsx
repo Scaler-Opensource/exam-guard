@@ -10,7 +10,7 @@ const ProgressBar = ({ value = 0, className = '' }) => {
         className="h-full bg-green-500 transition-all duration-1000 ease-in-out flex items-center justify-center text-white text-sm font-medium"
         style={{ width: `${percentage}%` }}
       >
-        {percentage}%
+        {percentage > 0 ? `${percentage}%` : ''}
       </div>
     </div>
   );
