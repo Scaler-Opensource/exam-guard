@@ -76,9 +76,8 @@ function Orientation({
   const handleSnapshotSuccess = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);
     setSnapshotCount(MIN_SNAPSHOT_COUNT);
-    setPositionGuideModalOpen(false);
     setSnapshotCollected(true);
-  }, [collectSnapshots, setPositionGuideModalOpen]);
+  }, [collectSnapshots]);
 
   const handleSnapshotFailure = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);
