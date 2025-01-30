@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 import { X } from 'lucide-react';
 import { Modal } from '@/ui/Modal';
@@ -10,6 +10,18 @@ function PositionGuideModal({ isOpen, onClose }) {
   const [videoCompleted, setVideoCompleted] = useState(false);
   const videoRef = useRef(null);
   const hasPlayedOnceRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen && !videoCompleted) {
+      const timeoutId = setTimeout(() => {
+        setVideoCompleted(true);
+        hasPlayedOnceRef.current = true;
+      }, 15000);
+
+      return () => clearTimeout(timeoutId);
+    }
+    return null;
+  }, [isOpen, videoCompleted]);
 
   const handleTimeUpdate = () => {
     if (!hasPlayedOnceRef.current && videoRef.current) {
