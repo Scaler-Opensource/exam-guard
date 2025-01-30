@@ -20,7 +20,7 @@ function PositionGuideModal({ isOpen, onClose }) {
 
       return () => clearTimeout(timeoutId);
     }
-    return null;
+    return () => {};
   }, [isOpen, videoCompleted]);
 
   const handleTimeUpdate = () => {
