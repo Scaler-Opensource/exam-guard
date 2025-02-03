@@ -18,6 +18,7 @@ import { useAppSelector } from '@/hooks/reduxhooks';
 import SnapshotFailed from './SnapshotFailed';
 import Carousel from '@/ui/Carousel';
 import ProgressBar from '@/ui/ProgressBar';
+import RealTimeCheckResult from './RealTimeCheckResult';
 
 function Orientation({
   className, setSwitchModalOpen, setPositionGuideModalOpen,
@@ -32,6 +33,8 @@ function Orientation({
   const [snapshotCollected, setSnapshotCollected] = useState(false);
   const [snapShotCount, setSnapshotCount] = useState(0);
   const [previousSnapshot, setPreviousSnapshot] = useState(null);
+  const [realTimeCheckPassed, setRealTimeCheckPassed] = useState(false);
+  const [checkPosition, setCheckPosition] = useState(true);
   const [imageUrl, setImageUrl] = useState(null);
   const [countdown, setCountdown] = useState(5);
   const { enableProctoring } = useAppSelector((state) => state.workflow);
@@ -41,6 +44,12 @@ function Orientation({
       setPositionGuideModalOpen(true);
     }
   }, [enableProctoring, setPositionGuideModalOpen]);
+
+  const validatePosition = useCallback(() => {
+    // TODO: Implement position validation function here.
+    setRealTimeCheckPassed(true);
+    setCheckPosition(false);
+  }, [setCheckPosition]);
 
   useEffect(() => {
     const fetchImageUrl = async () => {
@@ -77,7 +86,10 @@ function Orientation({
     collectSnapshots(snapShotData);
     setSnapshotCount(MIN_SNAPSHOT_COUNT);
     setSnapshotCollected(true);
-  }, [collectSnapshots]);
+    if (checkPosition) {
+      validatePosition();
+    }
+  }, [collectSnapshots, validatePosition, checkPosition]);
 
   const handleSnapshotFailure = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);
@@ -119,22 +131,24 @@ function Orientation({
         'mt-10',
         { [className]: className },
       )}>
-        <section className={styles.referenceImageContainer}>
-          <Carousel items={[
-            {
-              image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/601/original/Dec_10_Screenshot_Rounded_Corner.png?1733823148',
-              text: 'Position phone against a strong surface',
-            },
-            {
-              image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/593/original/Iterations_Image_4936.png?1733821016',
-              text: 'Adjust and verify your phone basis snapshot',
-            },
-            {
-              image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/594/original/IMG_4940_1.png?1733821035',
-              text: 'Once ready, click on proceed',
-            },
-          ]}/>
-        </section>
+        {!snapshotCollected && (
+          <section className={styles.referenceImageContainer}>
+            <Carousel items={[
+              {
+                image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/601/original/Dec_10_Screenshot_Rounded_Corner.png?1733823148',
+                text: 'Position phone against a strong surface',
+              },
+              {
+                image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/593/original/Iterations_Image_4936.png?1733821016',
+                text: 'Adjust and verify your phone basis snapshot',
+              },
+              {
+                image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/594/original/IMG_4940_1.png?1733821035',
+                text: 'Once ready, click on proceed',
+              },
+            ]}/>
+            </section>
+        )}
         <section className={styles.snapshotPreviewContainer}>
           {/* Snapshot section */}
           <div className={styles.snapshotPreview}>
@@ -162,13 +176,18 @@ function Orientation({
             </div>
           </div>
         </section>
+        {snapshotCollected && <RealTimeCheckResult
+          isComplete={realTimeCheckPassed}
+          setPositionGuideModalOpen={setPositionGuideModalOpen}
+        />}
       </div>
       <div className="mt-16">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             if (isChecked && snapshotCollected) {
-              handleProceed();
+              (realTimeCheckPassed
+                ? handleProceed : validatePosition)();
             }
           }}
         >
@@ -193,9 +212,10 @@ function Orientation({
               type="submit"
               className="mt-8 items-center py-8 px-10"
               variant="primary"
-              disabled={!snapshotCollected}
+              disabled={!isChecked}
             >
-              Proceed to next step
+              {snapshotCollected && realTimeCheckPassed
+                ? 'Proceed to next step' : 'Check orientation'}
               <ArrowRight className="w-6 h-6" />
             </Button>
             <Button
