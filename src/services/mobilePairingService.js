@@ -2,12 +2,17 @@ import {
   createApi, fetchBaseQuery,
 } from '@reduxjs/toolkit/query/react';
 
-const baseMobilePairingQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:3000',
-});
+const prepareHeaders = (headers, { getState }) => {
+  const { token } = getState().assessmentInfo;
+  if (token) {
+    headers.set('X-User-Token', token);
+  }
+  return headers;
+};
 
-const validateImagePositionQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:8080',
+const baseMobilePairingQuery = fetchBaseQuery({
+  baseUrl: window.location.origin,
+  prepareHeaders,
 });
 
 const mobilePairingService = createApi({
@@ -16,49 +21,29 @@ const mobilePairingService = createApi({
   baseQuery: baseMobilePairingQuery,
   endpoints: (build) => ({
     getQrCode: build.query({
-      query: ({ endpoint, payload }) => ({
+      query: ({ endpoint }) => ({
         method: 'GET',
-        url: endpoint || 'api/v3/proctoring/dual_camera/qr_code',
-        params: {
-          ...payload,
-        },
+        url: endpoint || 'api/v1/proctoring/plugins/dual_camera/qr_code',
       }),
     }),
     getPollingData: build.query({
-      query: ({ endpoint, payload }) => ({
+      query: ({ endpoint }) => ({
         method: 'GET',
-        url: endpoint || 'api/v3/proctoring/dual_camera/poll',
-        params: {
-          ...payload,
-        },
+        url: endpoint || '/api/v1/proctoring/events',
       }),
     }),
     validateImagePosition: build.mutation({
-      queryFn: async (arg, queryApi, extraOptions) => {
-        const {
-          imageFile,
-          headers = {
-            'X-User-Token': 'eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJjb21wYW5pb246djEiLCJleHAiOjE3Mzg5MjA1MDIsImlkIjoyLCJ0eXBlIjoiVGVzdFNlc3Npb24ifQ.z17mIu9Fegf27lDB7Oix0-s7QymKuEPaUo754z9IsrE',
-          },
-        } = arg;
-
+      query: ({ imageFile }) => {
         const formData = new FormData();
         if (imageFile) {
           formData.append('image', imageFile);
         }
 
-        return validateImagePositionQuery(
-          {
-            url: '/api/rt/orientation-check',
-            method: 'POST',
-            body: formData,
-            headers: {
-              ...headers,
-            },
-          },
-          queryApi,
-          extraOptions,
-        );
+        return {
+          url: '/api/rt/orientation-check',
+          method: 'POST',
+          body: formData,
+        };
       },
     }),
     sendProctorEvent: build.mutation({
@@ -66,14 +51,10 @@ const mobilePairingService = createApi({
         eventType,
         eventName,
         endpoint,
-        payload,
         extraData = {},
       }) => ({
-        url: endpoint || 'api/v3/proctoring/dual_camera/events',
+        url: endpoint || 'api/v1/proctoring/events',
         method: 'POST',
-        params: {
-          ...payload,
-        },
         body: {
           events: [{
             type: eventType,

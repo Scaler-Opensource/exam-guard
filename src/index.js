@@ -18,6 +18,7 @@ class ProctorLibrary {
 
     const defaultProps = {
       baseUrl: window.location.origin,
+      initPayload: {},
       eventsConfig: {},
       disqualificationConfig: {},
       config: {},

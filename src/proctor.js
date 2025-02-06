@@ -556,7 +556,10 @@ export default class Proctor {
         checks: passedChecks,
         baseUrl: this.compatibilityCheckConfig.baseUrl,
         endpoint: this.compatibilityCheckConfig.endpoint,
-        payload: this.compatibilityCheckConfig.defaultPayload,
+        payload: {
+          ...this.compatibilityCheckConfig.defaultPayload,
+          token: window.PROCTORING_SESSION_TOKEN,
+        },
       },
     });
   }
@@ -571,7 +574,10 @@ export default class Proctor {
         checks: passedChecks,
         baseUrl: this.compatibilityCheckConfig.baseUrl,
         endpoint: this.compatibilityCheckConfig.endpoint,
-        payload: this.compatibilityCheckConfig.defaultPayload,
+        payload: {
+          ...this.compatibilityCheckConfig.defaultPayload,
+          token: window.PROCTORING_SESSION_TOKEN,
+        },
       },
     });
   }

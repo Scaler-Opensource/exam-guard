@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
 
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import {
   setAssessmentInfo,
   setProctor,
+  fetchToken,
 } from '@/store/features/assessmentInfoSlice';
 
 import {
@@ -33,12 +36,15 @@ const App = ({
   mockModeEnabled,
   assessmentInfo,
   qrCodeConfig,
+  initPayload,
   enableProctoring: enableProctoringProp = false,
 }) => {
   const dispatch = useAppDispatch();
   const { enableProctoring: enableProctoringState } = useAppSelector(
     (state) => state.workflow,
   );
+  const { token } = useAppSelector((state) => state.assessmentInfo);
+  const [proctoringInitialized, setProctoringInitialized] = useState(false);
   const [initialised, setInitialised] = useState(false);
   const enableProctoring = enableProctoringProp || enableProctoringState;
   const { enabled: enabledScreenshotConfig } = screenshotConfig;
@@ -175,6 +181,18 @@ const App = ({
     steps,
   ]);
 
+  const handleWorkflowComplete = useCallback(() => {
+    if (!proctoringInitialized) {
+      proctor.initializeProctoring();
+      setProctoringInitialized(true);
+    }
+    callbacks?.onWorkflowComplete?.();
+  }, [callbacks, proctor, proctoringInitialized]);
+
+  const fetchAuthToken = useCallback(() => {
+    dispatch(fetchToken({ baseUrl, payload: initPayload }));
+  }, [dispatch, baseUrl, initPayload]);
+
   useEffect(() => {
     const initializeProctoring = async () => {
       try {
@@ -186,7 +204,7 @@ const App = ({
         }
         dispatch(setAssessmentInfo(assessmentInfo));
         dispatch(setEnableProctoring(enableProctoring));
-        dispatch(setOnWorkflowComplete(callbacks?.onWorkflowComplete));
+        dispatch(setOnWorkflowComplete(handleWorkflowComplete));
         dispatch(setProctor(proctor));
         dispatch(setBulkStepEnabled(steps));
       } catch (error) {
@@ -196,12 +214,17 @@ const App = ({
     if (!initialised) {
       initializeProctoring();
       setInitialised(true);
+
+      if (!token) {
+        fetchAuthToken();
+      }
     }
   }, [assessmentInfo, baseUrl, callbacks, compatibilityCheckConfig,
-    config, dispatch, disqualificationConfig, enableAllAlerts, enableProctoring,
-    enableProctoringState, eventsConfig, headerOptions, initialised,
+    config, dispatch, disqualificationConfig, enableAllAlerts,
+    enableProctoring, enableProctoringState, eventsConfig,
+    handleWorkflowComplete, headerOptions, initialised,
     mobilePairingConfig, mockModeEnabled, proctor, qrCodeConfig,
-    screenshotConfig, snapshotConfig, steps]);
+    screenshotConfig, snapshotConfig, steps, fetchAuthToken, token]);
 
   return <CompatibilityModal />;
 };

@@ -33,11 +33,17 @@
 
   <script>
     Proctor.initialize('root', {
-      baseUrl: 'http://localhost:3000',
+      baseUrl: 'http://localhost:8080',
       enableAllAlerts: true,
       assessmentInfo: {
         userName: 'John Doe',
         assessmentName: 'Assessment 1',
+      },
+      initPayload: {
+        api_context: {
+          id: 16884,
+          type: 'interviewbit_test',
+        },
       },
       config: {
         tabSwitch: {
@@ -54,27 +60,13 @@
       enableProctoring: false,
       mobilePairingConfig: {
         baseUrl: 'http://localhost:3000/',
-        enabled: true,
-        defaultPayload: {
-          'api_context[id]': 16884,
-          'api_context[type]': 'interviewbit_test',
-        },
-        endpoint: 'api/v3/proctoring/dual_camera/poll',
+        enabled: true
       },
       qrCodeConfig: {
-        baseUrl: 'http://localhost:3000/',
-        defaultPayload: {
-          'api_context[id]': 16884,
-          'api_context[type]': 'interviewbit_test',
-        },
-        endpoint: 'api/v3/proctoring/dual_camera/qr_code',
+        baseUrl: 'http://localhost:3000/'
       },
       compatibilityCheckConfig: {
-        baseUrl: 'http://localhost:3000/',
-        defaultPayload: {
-          'test_id': 16884,
-        },
-        endpoint: 'api/v3/proctoring/dual_camera/events'
+        baseUrl: 'http://localhost:8080/',
       },
       callbacks: {
         onWorkflowComplete: () => {

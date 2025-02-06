@@ -20,22 +20,21 @@ import Carousel from '@/ui/Carousel';
 import ProgressBar from '@/ui/ProgressBar';
 import RealTimeCheckResult from './RealTimeCheckResult';
 import { useValidateImagePositionMutation } from '@/services/mobilePairingService';
-import { SAMPLE_IMAGE } from './dummy';
 
-function base64ToFile(base64String, filename) {
-  const arr = base64String.split(',');
-  const mimeMatch = arr[0].match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : 'image/png'; // Default to PNG if MIME type is missing
-  const byteString = atob(arr[1]); // Decode Base64
-
-  let n = byteString.length;
-  const uint8Array = new Uint8Array(n);
-  // eslint-disable-next-line no-plusplus
-  while (n--) {
-    uint8Array[n] = byteString.charCodeAt(n);
-  }
-
-  return new File([uint8Array], filename, { type: mime });
+function downloadImageAndConvertToFile(imageUrl, filename) {
+  return new Promise((resolve, reject) => {
+    fetch(imageUrl)
+      .then((response) => response.blob())
+      .then((blob) => {
+        // Create a File object from the blob
+        const file = new File([blob], filename, { type: blob.type });
+        resolve(file);
+      })
+      .catch((error) => {
+        console.error('Error downloading image:', error);
+        reject(error);
+      });
+  });
 }
 
 function Orientation({
@@ -67,23 +66,30 @@ function Orientation({
   }, [enableProctoring, setPositionGuideModalOpen]);
 
   const validatePosition = useCallback(async () => {
-    const response = await validateImagePosition({
-      imageFile: base64ToFile(SAMPLE_IMAGE, 'image.png'),
-    });
-    if (response.data) {
-      const {
-        success,
-        result,
-      } = response.data;
+    if (isEvaluatingPosition) return;
 
-      if (success) {
-        setPositionCheckResult(result.setup_validations);
+    try {
+      const imageFile = await downloadImageAndConvertToFile(imageUrl, 'image.png');
+      const response = await validateImagePosition({
+        imageFile,
+      });
+      console.log('response', response);
+      if (response.data) {
+        const {
+          success,
+          result,
+        } = response.data;
+        if (success) {
+          setPositionCheckResult(result.setup_validations);
+        }
+        if (result?.is_valid) {
+          setRealTimeCheckPassed(true);
+        }
       }
-      if (result.is_valid) {
-        setRealTimeCheckPassed(true);
-      }
+    } catch (error) {
+      console.log('Error validating position:', error);
     }
-  }, [validateImagePosition]);
+  }, [validateImagePosition, imageUrl, isEvaluatingPosition]);
 
   useEffect(() => {
     const fetchImageUrl = async () => {
@@ -207,7 +213,10 @@ function Orientation({
             </div>
           </div>
         </section>
-        {(positionCheckResult.length > 0 || isEvaluatingPosition) && <RealTimeCheckResult
+        {((positionCheckResult
+        && Array.isArray(positionCheckResult)
+         && positionCheckResult.length > 0)
+        || isEvaluatingPosition) && <RealTimeCheckResult
           setPositionGuideModalOpen={setPositionGuideModalOpen}
           positionCheckResult={positionCheckResult}
           isLoading={isEvaluatingPosition}

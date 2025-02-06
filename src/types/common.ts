@@ -10,4 +10,5 @@ export interface AssessmentInfoState {
   userName: string;
   assessmentName: string;
   proctor: Proctor | null;
+  token: string | null;
 }
