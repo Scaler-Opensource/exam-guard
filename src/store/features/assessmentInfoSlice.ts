@@ -11,8 +11,7 @@ const initialState: AssessmentInfoState = {
 export const fetchToken = createAsyncThunk(
   'assessmentInfo/fetchToken',
   async ({ baseUrl, payload }: { baseUrl: string, payload: any }) => {
-    console.log('baseUrl', baseUrl);
-    const response = await fetch(`http://localhost:3000/api/v3/proctoring/dual_camera/init`, {
+    const response = await fetch(`${baseUrl}/api/v3/proctoring/dual_camera/init`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

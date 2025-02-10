@@ -2,6 +2,14 @@ import {
   createApi, fetchBaseQuery,
 } from '@reduxjs/toolkit/query/react';
 
+let currentBaseUrl = window.location.origin;
+
+export const configureService = (config) => {
+  if (config?.baseUrl) {
+    currentBaseUrl = config.baseUrl;
+  }
+};
+
 const prepareHeaders = (headers, { getState }) => {
   const { token } = getState().assessmentInfo;
   if (token) {
@@ -11,19 +19,28 @@ const prepareHeaders = (headers, { getState }) => {
 };
 
 const baseMobilePairingQuery = fetchBaseQuery({
-  baseUrl: window.location.origin,
+  baseUrl: '',
   prepareHeaders,
 });
+
+const dynamicBaseQuery = async (args, api, extraOptions) => {
+  // Modify the URL to include the dynamic base URL
+  const urlWithBase = `${currentBaseUrl}${args.url}`;
+  const modifiedArgs = { ...args, url: urlWithBase };
+
+  // Call the original query with modified URL
+  return baseMobilePairingQuery(modifiedArgs, api, extraOptions);
+};
 
 const mobilePairingService = createApi({
   reducerPath: 'mobilePairing',
   tagTypes: [],
-  baseQuery: baseMobilePairingQuery,
+  baseQuery: dynamicBaseQuery,
   endpoints: (build) => ({
     getQrCode: build.query({
       query: ({ endpoint }) => ({
         method: 'GET',
-        url: endpoint || 'api/v1/proctoring/plugins/dual_camera/qr_code',
+        url: endpoint || '/api/v1/proctoring/plugins/dual_camera/qr_code',
       }),
     }),
     getPollingData: build.query({
@@ -53,7 +70,7 @@ const mobilePairingService = createApi({
         endpoint,
         extraData = {},
       }) => ({
-        url: endpoint || 'api/v1/proctoring/events',
+        url: endpoint || '/api/v1/proctoring/events',
         method: 'POST',
         body: {
           events: [{

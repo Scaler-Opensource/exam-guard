@@ -73,7 +73,7 @@ function Orientation({
       const response = await validateImagePosition({
         imageFile,
       });
-      console.log('response', response);
+
       if (response.data) {
         const {
           success,

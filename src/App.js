@@ -1,6 +1,7 @@
 import React, {
   useCallback, useEffect, useMemo, useState,
 } from 'react';
+import { configureService as configureMobilePairingService } from '@/services/mobilePairingService';
 
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import {
@@ -36,7 +37,7 @@ const App = ({
   mockModeEnabled,
   assessmentInfo,
   qrCodeConfig,
-  initPayload,
+  initConfig,
   enableProctoring: enableProctoringProp = false,
 }) => {
   const dispatch = useAppDispatch();
@@ -190,12 +191,20 @@ const App = ({
   }, [callbacks, proctor, proctoringInitialized]);
 
   const fetchAuthToken = useCallback(() => {
-    dispatch(fetchToken({ baseUrl, payload: initPayload }));
-  }, [dispatch, baseUrl, initPayload]);
+    dispatch(fetchToken({
+      baseUrl: initConfig?.baseUrl,
+      payload: initConfig?.payload,
+    }));
+  }, [dispatch, initConfig]);
 
   useEffect(() => {
     const initializeProctoring = async () => {
       try {
+        // Configure mobile pairing service with the baseUrl from props
+        if (baseUrl) {
+          configureMobilePairingService({ baseUrl });
+        }
+
         if (enableProctoring) {
           await proctor.initializeProctoring();
           dispatch(setModalOpen(false));

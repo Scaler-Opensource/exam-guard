@@ -239,7 +239,7 @@ export default function CameraSelector() {
             onChange={(e) => debouncedHandleCameraChange(e.target.value)}
             className="w-full text-sm appearance-none rounded-lg border border-gray-300 bg-white py-4 pl-16 pr-8 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
           >
-            <option value="" disabled selected={!selectedCamera}>
+            <option value="" disabled>
               Select Camera Input
             </option>
             {cameras?.map((camera) => (
