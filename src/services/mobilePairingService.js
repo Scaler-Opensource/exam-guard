@@ -13,7 +13,7 @@ export const configureService = (config) => {
 const prepareHeaders = (headers, { getState }) => {
   const { token } = getState().assessmentInfo;
   if (token) {
-    headers.set('X-User-Token', token);
+    headers.set('X-Session-Token', token);
   }
   return headers;
 };
