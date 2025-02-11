@@ -183,12 +183,8 @@ const App = ({
   ]);
 
   const handleWorkflowComplete = useCallback(() => {
-    if (!proctoringInitialized) {
-      proctor.initializeProctoring();
-      setProctoringInitialized(true);
-    }
     callbacks?.onWorkflowComplete?.();
-  }, [callbacks, proctor, proctoringInitialized]);
+  }, [callbacks]);
 
   const fetchAuthToken = useCallback(() => {
     dispatch(fetchToken({
