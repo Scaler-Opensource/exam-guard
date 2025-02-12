@@ -1,10 +1,12 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import classNames from 'classnames';
+// import { toast } from 'react-toastify';
 
 import { useDispatch } from 'react-redux';
 import {
   ArrowRight,
 } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
 import useProctorPolling from '@/hooks/useProctorPolling';
@@ -12,8 +14,6 @@ import { MIN_SNAPSHOT_COUNT } from '@/utils/constants';
 
 import Loader from '@/ui/Loader';
 import { nextSubStep, selectStep, setStepSetupMode } from '@/store/features/workflowSlice';
-
-import styles from './MobileCameraStep.module.scss';
 import { useAppSelector } from '@/hooks/reduxhooks';
 import SnapshotFailed from './SnapshotFailed';
 import Carousel from '@/ui/Carousel';
@@ -21,6 +21,9 @@ import ProgressBar from '@/ui/ProgressBar';
 import RealTimeCheckResult from './RealTimeCheckResult';
 import { useValidateImagePositionMutation } from '@/services/mobilePairingService';
 import PositionGuideModal from './PositionGuideModal';
+import CheckOrientationModal from './CheckOrientationModal';
+
+import styles from './MobileCameraStep.module.scss';
 
 function downloadImageAndConvertToFile(imageUrl, filename) {
   return new Promise((resolve, reject) => {
@@ -56,11 +59,13 @@ function Orientation({
   const [positionCheckResult, setPositionCheckResult] = useState([]);
   const [isPositionGuideModalOpen, setPositionGuideModalOpen] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [isOrientationCheckModalOpen, setOrientationCheckModalOpen] = useState(false);
   const { enableProctoring } = useAppSelector((state) => state.workflow);
   const [validateImagePosition, {
     isLoading:
      isEvaluatingPosition,
   }] = useValidateImagePositionMutation();
+  const [validationAttempts, setValidationAttempts] = useState(0);
 
   const handlePositionGuideModalClose = useCallback(() => {
     setPositionGuideModalOpen(false);
@@ -70,30 +75,44 @@ function Orientation({
     if (isEvaluatingPosition || !snapshotCollected) return;
 
     try {
+      // Increment attempt counter
+      setValidationAttempts((prev) => prev + 1);
+
       const imageFile = await downloadImageAndConvertToFile(imageUrl, 'image.png');
       const response = await validateImagePosition({
         imageFile,
       });
 
-      if (response.data) {
+      if (response?.data) {
         const {
           success,
           result,
         } = response.data;
+
         if (success) {
-          setPositionCheckResult(result.setup_validations);
+          setPositionCheckResult(result?.setup_validations || []);
+        } else {
+          throw new Error('Validation failed');
         }
         if (result?.is_valid) {
           setRealTimeCheckPassed(true);
         }
+      } else {
+        throw new Error('Validation failed');
       }
     } catch (error) {
-      console.log('Error validating position:', error);
+      toast.error('Validation failed. Please try again');
+
+      // If we've reached 3 attempts, automatically pass the check
+      if (validationAttempts >= 2) { // Using 2 since we already incremented above
+        setOrientationCheckModalOpen(true);
+      }
     }
   }, [validateImagePosition,
     imageUrl,
     isEvaluatingPosition,
     snapshotCollected,
+    validationAttempts,
   ]);
 
   useEffect(() => {
@@ -306,6 +325,13 @@ function Orientation({
           setPositionGuideModalOpen(false);
         }}
         onClose={handlePositionGuideModalClose}
+      />
+      <CheckOrientationModal
+        isOpen={isOrientationCheckModalOpen}
+        onClose={() => {
+          setRealTimeCheckPassed(true);
+          setOrientationCheckModalOpen(false);
+        }}
       />
     </div>
   );

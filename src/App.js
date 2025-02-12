@@ -1,6 +1,7 @@
 import React, {
   useCallback, useEffect, useMemo, useState,
 } from 'react';
+import { ToastContainer } from 'react-toastify';
 import { configureService as configureMobilePairingService } from '@/services/mobilePairingService';
 
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
@@ -21,6 +22,8 @@ import CompatibilityModal from '@/components/CompatibilityModal';
 import Proctor from '@/proctor';
 import ScreenShareHandlers from '@/store/handlers/screenShare';
 import WebcamHandlers from '@/store/handlers/webcam';
+
+import 'react-toastify/dist/ReactToastify.css';
 
 const App = ({
   baseUrl,
@@ -45,7 +48,6 @@ const App = ({
     (state) => state.workflow,
   );
   const { token } = useAppSelector((state) => state.assessmentInfo);
-  const [proctoringInitialized, setProctoringInitialized] = useState(false);
   const [initialised, setInitialised] = useState(false);
   const enableProctoring = enableProctoringProp || enableProctoringState;
   const { enabled: enabledScreenshotConfig } = screenshotConfig;
@@ -231,7 +233,24 @@ const App = ({
     mobilePairingConfig, mockModeEnabled, proctor, qrCodeConfig,
     screenshotConfig, snapshotConfig, steps, fetchAuthToken, token]);
 
-  return <CompatibilityModal />;
+  return (
+    <>
+      <CompatibilityModal />
+      <ToastContainer
+        position="top-center"
+        toastClassName="text-base"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </>
+  );
 };
 
 export default App;
