@@ -20,6 +20,7 @@ import Carousel from '@/ui/Carousel';
 import ProgressBar from '@/ui/ProgressBar';
 import RealTimeCheckResult from './RealTimeCheckResult';
 import { useValidateImagePositionMutation } from '@/services/mobilePairingService';
+import PositionGuideModal from './PositionGuideModal';
 
 function downloadImageAndConvertToFile(imageUrl, filename) {
   return new Promise((resolve, reject) => {
@@ -38,7 +39,7 @@ function downloadImageAndConvertToFile(imageUrl, filename) {
 }
 
 function Orientation({
-  className, setSwitchModalOpen, setPositionGuideModalOpen,
+  className, setSwitchModalOpen,
 }) {
   const {
     setupMode,
@@ -53,20 +54,20 @@ function Orientation({
   const [realTimeCheckPassed, setRealTimeCheckPassed] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
   const [positionCheckResult, setPositionCheckResult] = useState([]);
+  const [isPositionGuideModalOpen, setPositionGuideModalOpen] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const { enableProctoring } = useAppSelector((state) => state.workflow);
   const [validateImagePosition, {
     isLoading:
      isEvaluatingPosition,
   }] = useValidateImagePositionMutation();
-  useEffect(() => {
-    if (!enableProctoring) {
-      setPositionGuideModalOpen(true);
-    }
-  }, [enableProctoring, setPositionGuideModalOpen]);
+
+  const handlePositionGuideModalClose = useCallback(() => {
+    setPositionGuideModalOpen(false);
+  }, []);
 
   const validatePosition = useCallback(async () => {
-    if (isEvaluatingPosition) return;
+    if (isEvaluatingPosition || !snapshotCollected) return;
 
     try {
       const imageFile = await downloadImageAndConvertToFile(imageUrl, 'image.png');
@@ -89,7 +90,11 @@ function Orientation({
     } catch (error) {
       console.log('Error validating position:', error);
     }
-  }, [validateImagePosition, imageUrl, isEvaluatingPosition]);
+  }, [validateImagePosition,
+    imageUrl,
+    isEvaluatingPosition,
+    snapshotCollected,
+  ]);
 
   useEffect(() => {
     const fetchImageUrl = async () => {
@@ -124,9 +129,12 @@ function Orientation({
 
   const handleSnapshotSuccess = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);
-    setSnapshotCount(MIN_SNAPSHOT_COUNT);
-    setSnapshotCollected(true);
-  }, [collectSnapshots]);
+    if (!snapshotCollected) {
+      setSnapshotCount(MIN_SNAPSHOT_COUNT);
+      setSnapshotCollected(true);
+      setPositionGuideModalOpen(true);
+    }
+  }, [collectSnapshots, snapshotCollected]);
 
   const handleSnapshotFailure = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);
@@ -153,6 +161,34 @@ function Orientation({
     onSnapshotSuccess: handleSnapshotSuccess,
     onSnapshotFailure: handleSnapshotFailure,
   });
+
+  const proceedButtonUi = () => (
+      <Button
+        type="submit"
+        className="mt-8 items-center py-8 px-10"
+        disabled={!isChecked}
+        variant="primary">
+        Proceed to next step
+        <ArrowRight className="w-6 h-6" />
+      </Button>);
+
+  const checkOrientationButtonUi = () => (
+      <Button
+        type="submit"
+        className="mt-8 items-center py-8 px-10"
+        disabled={isEvaluatingPosition || !snapshotCollected}
+        variant="primary">
+        Check orientation
+        <ArrowRight className="w-6 h-6" />
+      </Button>
+  );
+
+  const buttonUi = () => {
+    if (snapshotCollected && realTimeCheckPassed) {
+      return proceedButtonUi();
+    }
+    return checkOrientationButtonUi();
+  };
 
   if (enableProctoring && !setupMode) {
     return (<SnapshotFailed setSwitchModalOpen={setSwitchModalOpen} />);
@@ -226,39 +262,32 @@ function Orientation({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (isChecked && snapshotCollected) {
-              (realTimeCheckPassed
+            if (snapshotCollected) {
+              ((realTimeCheckPassed && isChecked)
                 ? handleProceed : validatePosition)();
             }
           }}
         >
-          <div className="flex items-start gap-2 mt-6 text-sm">
-            <Checkbox
-              id="confirm"
-              className='mr-2 mt-1 h-6 w-6'
-              checked={isChecked}
-              onCheckedChange={(checked) => setIsChecked(checked)}
-              disabled={!snapshotCollected}
+          {realTimeCheckPassed && snapshotCollected ? (
+            <div className="flex items-start gap-2 mt-6 text-sm">
+              <Checkbox
+                id="confirm"
+                className='mr-2 mt-1 h-6 w-6'
+                checked={isChecked}
+                onCheckedChange={(checked) => setIsChecked(checked)}
+                disabled={!snapshotCollected}
               role="checkbox"
               required={snapshotCollected}
             />
-            <label htmlFor="confirm" className="text-sm text-gray-600">
+           <label htmlFor="confirm" className="text-sm text-gray-600">
               By clicking on this, you confirm that your mobile phone is paired
               and will remain charged during the test. If disconnected, you&apos;ll
               need to reconnect before being able to continue with the test.
             </label>
           </div>
+          ) : null}
           <div className="flex items-center">
-            <Button
-              type="submit"
-              className="mt-8 items-center py-8 px-10"
-              variant="primary"
-              disabled={!isChecked}
-            >
-              {snapshotCollected && realTimeCheckPassed
-                ? 'Proceed to next step' : 'Check orientation'}
-              <ArrowRight className="w-6 h-6" />
-            </Button>
+            {buttonUi()}
             <Button
               className='mt-8 items-center py-8 px-10 ml-6'
               variant='outline'
@@ -270,6 +299,14 @@ function Orientation({
           </div>
         </form>
       </div>
+      <PositionGuideModal
+        isOpen={isPositionGuideModalOpen}
+        onProceed={() => {
+          validatePosition();
+          setPositionGuideModalOpen(false);
+        }}
+        onClose={handlePositionGuideModalClose}
+      />
     </div>
   );
 }
