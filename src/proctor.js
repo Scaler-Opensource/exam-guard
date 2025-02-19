@@ -351,7 +351,7 @@ export default class Proctor {
     this.violationWorker.postMessage({
       type: 'INIT',
       data: {
-        baseUrl: this.baseUrl,
+        baseUrl: this.eventsConfig.baseUrl,
         endpoint: this.eventsConfig.endpoint,
         maxEventsBeforeSend: this.eventsConfig.maxEventsBeforeSend,
         contentType: this.headerOptions.contentType,

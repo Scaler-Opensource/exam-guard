@@ -60,6 +60,7 @@ function Orientation({
   const [isPositionGuideModalOpen, setPositionGuideModalOpen] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [isOrientationCheckModalOpen, setOrientationCheckModalOpen] = useState(false);
+  const [totalAttempts, setTotalAttempts] = useState(0);
   const { enableProctoring } = useAppSelector((state) => state.workflow);
   const [validateImagePosition, {
     isLoading:
@@ -74,10 +75,8 @@ function Orientation({
   const validatePosition = useCallback(async () => {
     if (isEvaluatingPosition || !snapshotCollected) return;
 
+    setTotalAttempts((prev) => prev + 1);
     try {
-      // Increment attempt counter
-      setValidationAttempts((prev) => prev + 1);
-
       const imageFile = await downloadImageAndConvertToFile(imageUrl, 'image.png');
       const response = await validateImagePosition({
         imageFile,
@@ -101,6 +100,8 @@ function Orientation({
         throw new Error('Validation failed');
       }
     } catch (error) {
+      // Increment attempt counter
+      setValidationAttempts((prev) => prev + 1);
       toast.error('Validation failed. Please try again');
 
       // If we've reached 3 attempts, automatically pass the check
@@ -197,7 +198,7 @@ function Orientation({
         className="mt-8 items-center py-8 px-10"
         disabled={isEvaluatingPosition || !snapshotCollected}
         variant="primary">
-        Check orientation
+         {totalAttempts === 0 ? 'Check orientation' : 'Retry Orientation Check'}
         <ArrowRight className="w-6 h-6" />
       </Button>
   );

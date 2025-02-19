@@ -39,10 +39,13 @@
         userName: 'John Doe',
         assessmentName: 'Assessment 1',
       },
-      initPayload: {
-        api_context: {
-          id: 16884,
-          type: 'interviewbit_test',
+      initConfig: {
+        baseUrl: 'http://localhost:3000',
+        payload: {
+          api_context: {
+            id: 16884,
+            type: 'interviewbit_test',
+          },
         },
       },
       config: {
@@ -59,14 +62,7 @@
       },
       enableProctoring: false,
       mobilePairingConfig: {
-        baseUrl: 'http://localhost:3000/',
-        enabled: true
-      },
-      qrCodeConfig: {
-        baseUrl: 'http://localhost:3000/'
-      },
-      compatibilityCheckConfig: {
-        baseUrl: 'http://localhost:8080/',
+        enabled: true,
       },
       callbacks: {
         onWorkflowComplete: () => {
