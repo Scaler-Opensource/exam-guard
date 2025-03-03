@@ -64,6 +64,15 @@
       mobilePairingConfig: {
         enabled: true,
       },
+      beepConfig: {
+        enabled: true,
+        sounds: {
+          screenShare: '/screenshare.mp3',
+          cameraShare: '/laptopcamera.mp3',
+          mobileCameraShare: '/mobilecamera.mp3',
+          compatibilityChecks: '/screenshare.mp3',
+        },
+      },
       callbacks: {
         onWorkflowComplete: () => {
           console.error('onWorkflowComplete triggered');
