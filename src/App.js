@@ -16,6 +16,7 @@ import {
   setModalOpen,
   setEnableProctoring,
   setOnWorkflowComplete,
+  setBeepConfig,
 } from '@/store/features/workflowSlice';
 import CompatibilityHandlers from '@/store/handlers/compatibility';
 import CompatibilityModal from '@/components/CompatibilityModal';
@@ -42,6 +43,7 @@ const App = ({
   qrCodeConfig,
   initConfig,
   enableProctoring: enableProctoringProp = false,
+  beepConfig,
 }) => {
   const dispatch = useAppDispatch();
   const { enableProctoring: enableProctoringState } = useAppSelector(
@@ -165,6 +167,7 @@ const App = ({
       headerOptions,
       mockModeEnabled,
       qrCodeConfig,
+      beepConfig,
     });
   }, [
     baseUrl,
@@ -182,6 +185,7 @@ const App = ({
     screenshotConfig,
     snapshotConfig,
     steps,
+    beepConfig,
   ]);
 
   const handleWorkflowComplete = useCallback(() => {
@@ -211,6 +215,7 @@ const App = ({
         }
         dispatch(setAssessmentInfo(assessmentInfo));
         dispatch(setEnableProctoring(enableProctoring));
+        dispatch(setBeepConfig(beepConfig));
         dispatch(setOnWorkflowComplete(handleWorkflowComplete));
         dispatch(setProctor(proctor));
         dispatch(setBulkStepEnabled(steps));
@@ -231,7 +236,7 @@ const App = ({
     enableProctoring, enableProctoringState, eventsConfig,
     handleWorkflowComplete, headerOptions, initialised,
     mobilePairingConfig, mockModeEnabled, proctor, qrCodeConfig,
-    screenshotConfig, snapshotConfig, steps, fetchAuthToken, token]);
+    screenshotConfig, snapshotConfig, steps, fetchAuthToken, token, beepConfig]);
 
   return (
     <>

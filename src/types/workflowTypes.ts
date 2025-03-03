@@ -21,6 +21,11 @@ export interface StepState {
   setupMode: boolean;
 }
 
+export interface beepConfigState {
+  enabled: boolean;
+  sounds: Record<WorkflowStepKey, string>;
+}
+
 export interface WorkflowState {
   enableProctoring: boolean;
   modalOpen: boolean;
@@ -32,6 +37,7 @@ export interface WorkflowState {
     mobileCameraShare: StepState;
     compatibilityChecks: StepState;
   };
+  beepConfig: beepConfigState;
   onWorkflowComplete: () => void;
 }
 

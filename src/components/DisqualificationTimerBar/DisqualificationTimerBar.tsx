@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { WorkflowStepKey } from '@/types/workflowTypes';
 import { ClockIcon } from 'lucide-react';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
@@ -8,6 +8,10 @@ interface DisqualificationTimerBarProps {
   activeStep: WorkflowStepKey;
   modalOpen: boolean;
   failingSteps: WorkflowStepKey[];
+  beepConfig?: {
+    enabled: boolean;
+    sounds: Record<WorkflowStepKey, string>;
+  };
 }
 
 const STEP_VS_MESSAGE_MAPPING = {
@@ -33,12 +37,13 @@ const DisqualificationTimerBar: React.FC<DisqualificationTimerBarProps> = ({
   activeStep,
   modalOpen,
   failingSteps,
+  beepConfig,
 }) => {
   const getMaxTime = useMemo(() => {
     if (!failingSteps.length) return STEP_VS_MESSAGE_MAPPING[activeStep].time;
     
     return Math.max(
-      ...failingSteps.map(step => STEP_VS_MESSAGE_MAPPING[step].time)
+      ...failingSteps.map(step => STEP_VS_MESSAGE_MAPPING[step].time) 
     );
   }, [failingSteps, activeStep]);
 
@@ -46,14 +51,57 @@ const DisqualificationTimerBar: React.FC<DisqualificationTimerBarProps> = ({
   const proctor = useAppSelector(selectProctor);
 
   const [timeLeft, setTimeLeft] = useState(getMaxTime);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     setTimeLeft(getMaxTime);
-  }, [modalOpen, getMaxTime]);
+
+    console.log("Reached here");
+
+    if (beepConfig?.enabled && beepConfig.sounds[activeStep]) {
+      
+      if (!beepConfig.sounds[activeStep]) {
+        console.error('Audio file path is empty or invalid');
+        return;
+      }
+      
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      
+      try {
+        audioRef.current = new Audio(beepConfig.sounds[activeStep]);
+        audioRef.current.loop = true;
+        
+        // Add error handling for audio loading
+        audioRef.current.addEventListener('error', (e) => {
+          console.error('Audio loading error:', e);
+        });
+        
+        audioRef.current.play().catch((e) => {
+          console.error('Audio playback failed:', e);
+        });
+      } catch (e) {
+        console.error('Error creating audio element:', e);
+      }
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, [modalOpen, getMaxTime, activeStep, beepConfig]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
       proctor?.disqualifyUser();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       return;
     }
 
@@ -62,7 +110,7 @@ const DisqualificationTimerBar: React.FC<DisqualificationTimerBarProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, proctor]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
