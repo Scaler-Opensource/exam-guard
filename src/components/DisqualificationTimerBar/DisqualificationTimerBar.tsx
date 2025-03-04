@@ -53,55 +53,53 @@ const DisqualificationTimerBar: React.FC<DisqualificationTimerBarProps> = ({
   const [timeLeft, setTimeLeft] = useState(getMaxTime);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const handleAudio = (soundPath: string) => {
+    if (!soundPath || typeof soundPath !== 'string' || soundPath.trim() === '') {
+      return;
+    }
+    
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    try {
+      audioRef.current = new Audio(soundPath);
+      audioRef.current.loop = true;
+      
+      audioRef.current.addEventListener('error', () => {
+        // Silent error handling - just don't play the sound
+      });
+      
+      audioRef.current.play().catch(() => {
+        // Silent error handling - just don't play the sound
+      });
+    } catch {
+      // Silent error handling - just don't play the sound
+    }
+  };
+
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
+
   useEffect(() => {
     setTimeLeft(getMaxTime);
 
-    console.log("Reached here");
-
-    if (beepConfig?.enabled && beepConfig.sounds[activeStep]) {
-      
-      if (!beepConfig.sounds[activeStep]) {
-        console.error('Audio file path is empty or invalid');
-        return;
-      }
-      
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-      
-      try {
-        audioRef.current = new Audio(beepConfig.sounds[activeStep]);
-        audioRef.current.loop = true;
-        
-        // Add error handling for audio loading
-        audioRef.current.addEventListener('error', (e) => {
-          console.error('Audio loading error:', e);
-        });
-        
-        audioRef.current.play().catch((e) => {
-          console.error('Audio playback failed:', e);
-        });
-      } catch (e) {
-        console.error('Error creating audio element:', e);
-      }
+    if (beepConfig?.enabled && beepConfig.sounds && beepConfig.sounds[activeStep]) {
+      handleAudio(beepConfig.sounds[activeStep]);
     }
 
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-    };
+    return stopAudio;
   }, [modalOpen, getMaxTime, activeStep, beepConfig]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
       proctor?.disqualifyUser();
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
+      stopAudio();
       return;
     }
 
