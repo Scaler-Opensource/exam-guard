@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { WorkflowStepKey } from '@/types/workflowTypes';
 import { ClockIcon } from 'lucide-react';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
@@ -8,6 +8,10 @@ interface DisqualificationTimerBarProps {
   activeStep: WorkflowStepKey;
   modalOpen: boolean;
   failingSteps: WorkflowStepKey[];
+  beepConfig?: {
+    enabled: boolean;
+    sounds: Record<WorkflowStepKey, string>;
+  };
 }
 
 const STEP_VS_MESSAGE_MAPPING = {
@@ -33,12 +37,13 @@ const DisqualificationTimerBar: React.FC<DisqualificationTimerBarProps> = ({
   activeStep,
   modalOpen,
   failingSteps,
+  beepConfig,
 }) => {
   const getMaxTime = useMemo(() => {
     if (!failingSteps.length) return STEP_VS_MESSAGE_MAPPING[activeStep].time;
     
     return Math.max(
-      ...failingSteps.map(step => STEP_VS_MESSAGE_MAPPING[step].time)
+      ...failingSteps.map(step => STEP_VS_MESSAGE_MAPPING[step].time) 
     );
   }, [failingSteps, activeStep]);
 
@@ -46,14 +51,55 @@ const DisqualificationTimerBar: React.FC<DisqualificationTimerBarProps> = ({
   const proctor = useAppSelector(selectProctor);
 
   const [timeLeft, setTimeLeft] = useState(getMaxTime);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleAudio = (soundPath: string) => {
+    if (!soundPath || typeof soundPath !== 'string' || soundPath.trim() === '') {
+      return;
+    }
+    
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    try {
+      audioRef.current = new Audio(soundPath);
+      audioRef.current.loop = true;
+      
+      audioRef.current.addEventListener('error', () => {
+        // Silent error handling - just don't play the sound
+      });
+      
+      audioRef.current.play().catch(() => {
+        // Silent error handling - just don't play the sound
+      });
+    } catch {
+      // Silent error handling - just don't play the sound
+    }
+  };
+
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
 
   useEffect(() => {
     setTimeLeft(getMaxTime);
-  }, [modalOpen, getMaxTime]);
+
+    if (beepConfig?.enabled && beepConfig.sounds && beepConfig.sounds[activeStep]) {
+      handleAudio(beepConfig.sounds[activeStep]);
+    }
+
+    return stopAudio;
+  }, [modalOpen, getMaxTime, activeStep, beepConfig]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
       proctor?.disqualifyUser();
+      stopAudio();
       return;
     }
 
@@ -62,7 +108,7 @@ const DisqualificationTimerBar: React.FC<DisqualificationTimerBarProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, proctor]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

@@ -49,6 +49,7 @@ export default function CompatibilityModal() {
   const isDisqualified = useAppSelector(
     (state) => state.workflow.isDisqualified,
   );
+  const beepConfig = useAppSelector((state) => state.workflow.beepConfig);
   const [localModalOpen, setLocalModalOpen] = useState(modalOpen);
   const [showSuccess, setShowSuccess] = useState(false);
   const [timer, setTimer] = useState(3);
@@ -129,6 +130,7 @@ export default function CompatibilityModal() {
               activeStep={initialStep}
               modalOpen={localModalOpen}
               failingSteps={failingSteps}
+              beepConfig={beepConfig}
             />
           )}
           <div className='grow flex flex-row items-center overflow-hidden'>

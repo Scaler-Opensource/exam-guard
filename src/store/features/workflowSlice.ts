@@ -49,6 +49,15 @@ const initialState: WorkflowState = {
     ]),
   },
   onWorkflowComplete: () => {},
+  beepConfig: {
+    enabled: false,
+    sounds: {
+      screenShare: '',
+      cameraShare: '',
+      mobileCameraShare: '',
+      compatibilityChecks: '',
+    },
+  },
 };
 
 const workflowSlice = createSlice({
@@ -239,6 +248,13 @@ const workflowSlice = createSlice({
       }
     },
 
+    setBeepConfig(state, action: PayloadAction<{
+      enabled: boolean;
+      sounds: Record<WorkflowStepKey, string>;
+    }>) {
+      state.beepConfig = action.payload;
+    },
+
     setOnWorkflowComplete(
       state,
       action: PayloadAction<() => void>
@@ -271,6 +287,7 @@ export const {
   setActiveSubStep,
   setStepSetupMode,
   setIsDisqualified,
+  setBeepConfig,
 } = workflowSlice.actions;
 
 export default workflowSlice.reducer;
