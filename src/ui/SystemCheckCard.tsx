@@ -2,63 +2,10 @@ import React from 'react';
 import { AlertTriangle, CircleCheck, Loader2 } from 'lucide-react';
 
 import { Button } from '@/ui/Button';
-import { cn } from '@/lib/utils';
 import { selectStep } from '@/store/features/workflowSlice';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
-import { Status } from '@/types/workflowTypes';
 import { useAppSelector } from '@/hooks/reduxhooks';
-
-type CheckId = 'systemChecks' | 'networkChecks' | 'fullScreenCheck';
-
-interface CheckData {
-  title: string;
-  description?: string;
-  icon: React.ReactNode;
-  error?: React.ReactNode;
-  extraUi?: React.ReactNode;
-}
-
-interface CompatibilityStepProps extends CheckData {
-  checkId: CheckId;
-  status: Status;
-}
-
-const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
-  status,
-  title,
-  description,
-  icon,
-  error,
-  extraUi,
-}) => {
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-between w-full p-8 px-12 bg-white',
-        status === 'error' && 'bg-red-50',
-      )}
-    >
-      <div
-        className={cn(
-          'flex items-center gap-8',
-          status === 'error' && 'items-start',
-        )}
-      >
-        <div className='mt-1'>{icon}</div>
-        <div className='flex flex-col gap-1.5'>
-          <h3 className='font-medium text-gray-900 text-base'>{title}</h3>
-          {status === 'error' && description && (
-            <p className='text-gray-500 text-sm italic'>{description}</p>
-          )}
-          {error && (
-            <div className='mt-1 text-xs italic text-red-500'>{error}</div>
-          )}
-        </div>
-      </div>
-      {extraUi && <div className='flex items-center'>{extraUi}</div>}
-    </div>
-  );
-};
+import CompatibilityStep from './CompatibilityStep';
 
 export default function SystemCheckCard() {
   const compatibilityStep = useAppSelector((state) =>
@@ -185,7 +132,7 @@ export default function SystemCheckCard() {
             return (
               <CompatibilityStep
                 key={checkId}
-                checkId={checkId as CheckId}
+                checkId={checkId}
                 status={subStepStatus}
                 {...checkData[subStepStatus]}
               />
@@ -196,3 +143,5 @@ export default function SystemCheckCard() {
     </div>
   );
 }
+
+

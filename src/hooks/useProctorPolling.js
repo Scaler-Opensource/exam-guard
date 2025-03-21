@@ -13,16 +13,11 @@ const useProctorPolling = ({
   onDataUpdate,
 }, pollingInterval = 5000) => {
   const proctor = useSelector((state) => selectProctor(state));
-  const pollingPayload = proctor?.mobilePairingConfig?.defaultPayload || {};
-  const pollingEndpoint = proctor?.mobilePairingConfig?.endpoint || {};
-
+  const pollingEndpoint = proctor?.mobilePairingConfig?.endpoint || null;
   const { data } = useGetPollingDataQuery({
     endpoint: pollingEndpoint,
-    payload: pollingPayload,
   }, {
     pollingInterval,
-    // Skip polling if no endpoint or payload
-    skip: !pollingEndpoint || !pollingPayload,
     selectFromResult: ({ data: resultData }) => ({
       data: resultData,
     }),
@@ -61,7 +56,6 @@ const useProctorPolling = ({
 
   useEffect(() => {
     if (!data) return;
-
     // Call the onDataUpdate callback
     callbacksRef.current.onDataUpdate?.(data);
 

@@ -29,7 +29,6 @@ const Pairing = React.memo(({ className }) => {
     isError: qrCodeError,
   } = useGetQrCodeQuery({
     endpoint: qrCodeConfig.endpoint,
-    payload: qrCodeConfig.payload,
   });
 
   const handleSetupSuccess = useCallback(() => {

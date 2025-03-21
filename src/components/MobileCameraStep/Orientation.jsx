@@ -1,10 +1,12 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import classNames from 'classnames';
+// import { toast } from 'react-toastify';
 
 import { useDispatch } from 'react-redux';
 import {
   ArrowRight,
 } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
 import useProctorPolling from '@/hooks/useProctorPolling';
@@ -12,15 +14,35 @@ import { MIN_SNAPSHOT_COUNT } from '@/utils/constants';
 
 import Loader from '@/ui/Loader';
 import { nextSubStep, selectStep, setStepSetupMode } from '@/store/features/workflowSlice';
-
-import styles from './MobileCameraStep.module.scss';
 import { useAppSelector } from '@/hooks/reduxhooks';
 import SnapshotFailed from './SnapshotFailed';
 import Carousel from '@/ui/Carousel';
 import ProgressBar from '@/ui/ProgressBar';
+import RealTimeCheckResult from './RealTimeCheckResult';
+import { useValidateImagePositionMutation } from '@/services/mobilePairingService';
+import PositionGuideModal from './PositionGuideModal';
+import CheckOrientationModal from './CheckOrientationModal';
+
+import styles from './MobileCameraStep.module.scss';
+
+function downloadImageAndConvertToFile(imageUrl, filename) {
+  return new Promise((resolve, reject) => {
+    fetch(imageUrl)
+      .then((response) => response.blob())
+      .then((blob) => {
+        // Create a File object from the blob
+        const file = new File([blob], filename, { type: blob.type });
+        resolve(file);
+      })
+      .catch((error) => {
+        console.error('Error downloading image:', error);
+        reject(error);
+      });
+  });
+}
 
 function Orientation({
-  className, setSwitchModalOpen, setPositionGuideModalOpen,
+  className, setSwitchModalOpen,
 }) {
   const {
     setupMode,
@@ -32,15 +54,67 @@ function Orientation({
   const [snapshotCollected, setSnapshotCollected] = useState(false);
   const [snapShotCount, setSnapshotCount] = useState(0);
   const [previousSnapshot, setPreviousSnapshot] = useState(null);
+  const [realTimeCheckPassed, setRealTimeCheckPassed] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
+  const [positionCheckResult, setPositionCheckResult] = useState([]);
+  const [isPositionGuideModalOpen, setPositionGuideModalOpen] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [isOrientationCheckModalOpen, setOrientationCheckModalOpen] = useState(false);
+  const [totalAttempts, setTotalAttempts] = useState(0);
   const { enableProctoring } = useAppSelector((state) => state.workflow);
+  const [validateImagePosition, {
+    isLoading:
+     isEvaluatingPosition,
+  }] = useValidateImagePositionMutation();
+  const [validationAttempts, setValidationAttempts] = useState(0);
 
-  useEffect(() => {
-    if (!enableProctoring) {
-      setPositionGuideModalOpen(true);
+  const handlePositionGuideModalClose = useCallback(() => {
+    setPositionGuideModalOpen(false);
+  }, []);
+
+  const validatePosition = useCallback(async () => {
+    if (isEvaluatingPosition || !snapshotCollected) return;
+
+    setTotalAttempts((prev) => prev + 1);
+    try {
+      const imageFile = await downloadImageAndConvertToFile(imageUrl, 'image.png');
+      const response = await validateImagePosition({
+        imageFile,
+      });
+
+      if (response?.data) {
+        const {
+          success,
+          result,
+        } = response.data;
+
+        if (success) {
+          setPositionCheckResult(result?.setup_validations || []);
+        } else {
+          throw new Error('Validation failed');
+        }
+        if (result?.is_valid) {
+          setRealTimeCheckPassed(true);
+        }
+      } else {
+        throw new Error('Validation failed');
+      }
+    } catch (error) {
+      // Increment attempt counter
+      setValidationAttempts((prev) => prev + 1);
+      toast.error('Validation failed. Please try again');
+
+      // If we've reached 3 attempts, automatically pass the check
+      if (validationAttempts >= 2) { // Using 2 since we already incremented above
+        setOrientationCheckModalOpen(true);
+      }
     }
-  }, [enableProctoring, setPositionGuideModalOpen]);
+  }, [validateImagePosition,
+    imageUrl,
+    isEvaluatingPosition,
+    snapshotCollected,
+    validationAttempts,
+  ]);
 
   useEffect(() => {
     const fetchImageUrl = async () => {
@@ -75,9 +149,12 @@ function Orientation({
 
   const handleSnapshotSuccess = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);
-    setSnapshotCount(MIN_SNAPSHOT_COUNT);
-    setSnapshotCollected(true);
-  }, [collectSnapshots]);
+    if (!snapshotCollected) {
+      setSnapshotCount(MIN_SNAPSHOT_COUNT);
+      setSnapshotCollected(true);
+      setPositionGuideModalOpen(true);
+    }
+  }, [collectSnapshots, snapshotCollected]);
 
   const handleSnapshotFailure = useCallback((snapShotData) => {
     collectSnapshots(snapShotData);
@@ -105,6 +182,34 @@ function Orientation({
     onSnapshotFailure: handleSnapshotFailure,
   });
 
+  const proceedButtonUi = () => (
+      <Button
+        type="submit"
+        className="mt-8 items-center py-8 px-10"
+        disabled={!isChecked}
+        variant="primary">
+        Proceed to next step
+        <ArrowRight className="w-6 h-6" />
+      </Button>);
+
+  const checkOrientationButtonUi = () => (
+      <Button
+        type="submit"
+        className="mt-8 items-center py-8 px-10"
+        disabled={isEvaluatingPosition || !snapshotCollected}
+        variant="primary">
+         {totalAttempts === 0 ? 'Check orientation' : 'Retry Orientation Check'}
+        <ArrowRight className="w-6 h-6" />
+      </Button>
+  );
+
+  const buttonUi = () => {
+    if (snapshotCollected && realTimeCheckPassed) {
+      return proceedButtonUi();
+    }
+    return checkOrientationButtonUi();
+  };
+
   if (enableProctoring && !setupMode) {
     return (<SnapshotFailed setSwitchModalOpen={setSwitchModalOpen} />);
   }
@@ -119,22 +224,24 @@ function Orientation({
         'mt-10',
         { [className]: className },
       )}>
-        <section className={styles.referenceImageContainer}>
-          <Carousel items={[
-            {
-              image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/601/original/Dec_10_Screenshot_Rounded_Corner.png?1733823148',
-              text: 'Position phone against a strong surface',
-            },
-            {
-              image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/593/original/Iterations_Image_4936.png?1733821016',
-              text: 'Adjust and verify your phone basis snapshot',
-            },
-            {
-              image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/594/original/IMG_4940_1.png?1733821035',
-              text: 'Once ready, click on proceed',
-            },
-          ]}/>
-        </section>
+        {positionCheckResult.length === 0 && !isEvaluatingPosition && (
+          <section className={styles.referenceImageContainer}>
+            <Carousel items={[
+              {
+                image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/601/original/Dec_10_Screenshot_Rounded_Corner.png?1733823148',
+                text: 'Position phone against a strong surface',
+              },
+              {
+                image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/593/original/Iterations_Image_4936.png?1733821016',
+                text: 'Adjust and verify your phone basis snapshot',
+              },
+              {
+                image: 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/594/original/IMG_4940_1.png?1733821035',
+                text: 'Once ready, click on proceed',
+              },
+            ]}/>
+            </section>
+        )}
         <section className={styles.snapshotPreviewContainer}>
           {/* Snapshot section */}
           <div className={styles.snapshotPreview}>
@@ -162,42 +269,45 @@ function Orientation({
             </div>
           </div>
         </section>
+        {((positionCheckResult
+        && Array.isArray(positionCheckResult)
+         && positionCheckResult.length > 0)
+        || isEvaluatingPosition) && <RealTimeCheckResult
+          setPositionGuideModalOpen={setPositionGuideModalOpen}
+          positionCheckResult={positionCheckResult}
+          isLoading={isEvaluatingPosition}
+        />}
       </div>
       <div className="mt-16">
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (isChecked && snapshotCollected) {
-              handleProceed();
+            if (snapshotCollected) {
+              ((realTimeCheckPassed && isChecked)
+                ? handleProceed : validatePosition)();
             }
           }}
         >
-          <div className="flex items-start gap-2 mt-6 text-sm">
-            <Checkbox
-              id="confirm"
-              className='mr-2 mt-1 h-6 w-6'
-              checked={isChecked}
-              onCheckedChange={(checked) => setIsChecked(checked)}
-              disabled={!snapshotCollected}
+          {realTimeCheckPassed && snapshotCollected ? (
+            <div className="flex items-start gap-2 mt-6 text-sm">
+              <Checkbox
+                id="confirm"
+                className='mr-2 mt-1 h-6 w-6'
+                checked={isChecked}
+                onCheckedChange={(checked) => setIsChecked(checked)}
+                disabled={!snapshotCollected}
               role="checkbox"
               required={snapshotCollected}
             />
-            <label htmlFor="confirm" className="text-sm text-gray-600">
+           <label htmlFor="confirm" className="text-sm text-gray-600">
               By clicking on this, you confirm that your mobile phone is paired
               and will remain charged during the test. If disconnected, you&apos;ll
               need to reconnect before being able to continue with the test.
             </label>
           </div>
+          ) : null}
           <div className="flex items-center">
-            <Button
-              type="submit"
-              className="mt-8 items-center py-8 px-10"
-              variant="primary"
-              disabled={!snapshotCollected}
-            >
-              Proceed to next step
-              <ArrowRight className="w-6 h-6" />
-            </Button>
+            {buttonUi()}
             <Button
               className='mt-8 items-center py-8 px-10 ml-6'
               variant='outline'
@@ -209,6 +319,21 @@ function Orientation({
           </div>
         </form>
       </div>
+      <PositionGuideModal
+        isOpen={isPositionGuideModalOpen}
+        onProceed={() => {
+          validatePosition();
+          setPositionGuideModalOpen(false);
+        }}
+        onClose={handlePositionGuideModalClose}
+      />
+      <CheckOrientationModal
+        isOpen={isOrientationCheckModalOpen}
+        onClose={() => {
+          setRealTimeCheckPassed(true);
+          setOrientationCheckModalOpen(false);
+        }}
+      />
     </div>
   );
 }

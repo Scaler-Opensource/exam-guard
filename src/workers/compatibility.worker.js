@@ -25,7 +25,7 @@ class CompatibilityWorker {
     };
 
     // Use the URL class to construct the full URL
-    const url = new URL(endpoint, baseUrl);
+    const url = new URL(endpoint || 'api/v1/proctoring/events', baseUrl);
 
     fetch(url.toString(), {
       method: 'POST',

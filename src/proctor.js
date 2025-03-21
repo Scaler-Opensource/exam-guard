@@ -99,7 +99,6 @@ export default class Proctor {
       headingText: 'System Check: Configure Required Settings',
       defaultPayload: {},
       endpoint: '',
-      baseUrl: '',
       ...compatibilityCheckConfig,
     };
     this.disqualificationConfig = {
@@ -114,13 +113,11 @@ export default class Proctor {
       enabled: false,
       defaultPayload: {},
       endpoint: '',
-      baseUrl: '',
       ...mobilePairingConfig,
     };
     this.qrCodeConfig = {
       defaultPayload: {},
       endpoint: '',
-      baseUrl: '',
       ...qrCodeConfig,
     };
     this.proctoringInitialised = false;
@@ -354,7 +351,7 @@ export default class Proctor {
     this.violationWorker.postMessage({
       type: 'INIT',
       data: {
-        baseUrl: this.baseUrl,
+        baseUrl: this.eventsConfig.baseUrl,
         endpoint: this.eventsConfig.endpoint,
         maxEventsBeforeSend: this.eventsConfig.maxEventsBeforeSend,
         contentType: this.headerOptions.contentType,
@@ -554,9 +551,12 @@ export default class Proctor {
       type: 'SEND_COMPATIBILITY_EVENT',
       data: {
         checks: passedChecks,
-        baseUrl: this.compatibilityCheckConfig.baseUrl,
+        baseUrl: this.baseUrl,
         endpoint: this.compatibilityCheckConfig.endpoint,
-        payload: this.compatibilityCheckConfig.defaultPayload,
+        payload: {
+          ...this.compatibilityCheckConfig.defaultPayload,
+          token: window.PROCTORING_SESSION_TOKEN,
+        },
       },
     });
   }
@@ -569,9 +569,12 @@ export default class Proctor {
       type: 'SEND_COMPATIBILITY_EVENT',
       data: {
         checks: passedChecks,
-        baseUrl: this.compatibilityCheckConfig.baseUrl,
+        baseUrl: this.baseUrl,
         endpoint: this.compatibilityCheckConfig.endpoint,
-        payload: this.compatibilityCheckConfig.defaultPayload,
+        payload: {
+          ...this.compatibilityCheckConfig.defaultPayload,
+          token: window.PROCTORING_SESSION_TOKEN,
+        },
       },
     });
   }
@@ -584,16 +587,18 @@ export default class Proctor {
 
   checkMobileCompatiblity({ onSuccess, onFailure }) {
     checkMobilePairingStatus({
-      baseUrl: this.mobilePairingConfig.baseUrl,
+      baseUrl: this.baseUrl,
       endpoint: this.mobilePairingConfig.endpoint,
-      defaultPayload: this.mobilePairingConfig.defaultPayload,
+      defaultPayload: {
+        token: window.PROCTORING_SESSION_TOKEN,
+        ...this.mobilePairingConfig.defaultPayload,
+      },
       onSuccess,
       onFailure,
     });
   }
 
   runCompatibilityChecks(onSuccess, onFailure) {
-    console.log('%c⧭', 'color: #006dcc', 'RUNNING COMPATIBILITY CHECKS');
     const compatibilityChecks = {
       screenshare: this.screenshotConfig.enabled,
       webcam: this.snapshotConfig.enabled,

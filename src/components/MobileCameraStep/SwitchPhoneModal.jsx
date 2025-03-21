@@ -1,13 +1,12 @@
 import React, { useCallback } from 'react';
 
 import { X } from 'lucide-react';
-import { useDispatch, useSelector, batch } from 'react-redux';
+import { useDispatch, batch } from 'react-redux';
 import { Modal } from '@/ui/Modal';
 
 import switchPhone from '@/assets/images/switchPhone.svg';
 import { Button } from '@/ui/Button';
 import mobilePairingService, { useSendProctorEventMutation } from '@/services/mobilePairingService';
-import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { resetStep, setStepLocked, setStepSetupMode } from '@/store/features/workflowSlice';
 
 function SwitchPhoneModal({ isOpen, onClose }) {
@@ -15,44 +14,36 @@ function SwitchPhoneModal({ isOpen, onClose }) {
   const [
     sendProctorEvent,
   ] = useSendProctorEventMutation();
-  const proctor = useSelector((state) => selectProctor(state));
-  const eventPayload = proctor?.compatibilityCheckConfig?.defaultPayload;
-  const eventEndpoint = proctor?.compatibilityCheckConfig?.endpoint;
 
   /* Handlers */
   const handleSwitchPhone = useCallback(async () => {
-    if (eventPayload && eventEndpoint) {
-      try {
-        const response = await sendProctorEvent({
-          payload: eventPayload,
-          endpoint: eventEndpoint,
-          eventType: 'secondary_camera',
-          eventName: 'setup_reset',
-        });
+    try {
+      const response = await sendProctorEvent({
+        eventType: 'secondary_camera',
+        eventName: 'setup_reset',
+      });
 
-        if (response.data.success) {
-          batch(() => {
-            dispatch(resetStep({
-              step: 'mobileCameraShare',
-            }));
-            dispatch(setStepLocked({
-              step: 'mobileCameraShare',
-              locked: false,
-            }));
-            dispatch(mobilePairingService.util.resetApiState());
-            dispatch(setStepSetupMode({
-              step: 'mobileCameraShare',
-              setupMode: true,
-            }));
-          });
-          onClose?.();
-        }
-      } catch (e) {
-        // error handling
+      if (response.data.success) {
+        batch(() => {
+          dispatch(resetStep({
+            step: 'mobileCameraShare',
+          }));
+          dispatch(setStepLocked({
+            step: 'mobileCameraShare',
+            locked: false,
+          }));
+          dispatch(mobilePairingService.util.resetApiState());
+          dispatch(setStepSetupMode({
+            step: 'mobileCameraShare',
+            setupMode: true,
+          }));
+        });
+        onClose?.();
       }
+    } catch (e) {
+      // error handling
     }
-  }, [dispatch, eventEndpoint, eventPayload,
-    onClose, sendProctorEvent]);
+  }, [dispatch, onClose, sendProctorEvent]);
 
   return (
     <Modal

@@ -1,9 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import { ToastContainer } from 'react-toastify';
+import { configureService as configureMobilePairingService } from '@/services/mobilePairingService';
 
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import {
   setAssessmentInfo,
   setProctor,
+  fetchToken,
 } from '@/store/features/assessmentInfoSlice';
 
 import {
@@ -17,6 +22,8 @@ import CompatibilityModal from '@/components/CompatibilityModal';
 import Proctor from '@/proctor';
 import ScreenShareHandlers from '@/store/handlers/screenShare';
 import WebcamHandlers from '@/store/handlers/webcam';
+
+import 'react-toastify/dist/ReactToastify.css';
 
 const App = ({
   baseUrl,
@@ -33,12 +40,14 @@ const App = ({
   mockModeEnabled,
   assessmentInfo,
   qrCodeConfig,
+  initConfig,
   enableProctoring: enableProctoringProp = false,
 }) => {
   const dispatch = useAppDispatch();
   const { enableProctoring: enableProctoringState } = useAppSelector(
     (state) => state.workflow,
   );
+  const { token } = useAppSelector((state) => state.assessmentInfo);
   const [initialised, setInitialised] = useState(false);
   const enableProctoring = enableProctoringProp || enableProctoringState;
   const { enabled: enabledScreenshotConfig } = screenshotConfig;
@@ -175,9 +184,25 @@ const App = ({
     steps,
   ]);
 
+  const handleWorkflowComplete = useCallback(() => {
+    callbacks?.onWorkflowComplete?.();
+  }, [callbacks]);
+
+  const fetchAuthToken = useCallback(() => {
+    dispatch(fetchToken({
+      baseUrl: initConfig?.baseUrl,
+      payload: initConfig?.payload,
+    }));
+  }, [dispatch, initConfig]);
+
   useEffect(() => {
     const initializeProctoring = async () => {
       try {
+        // Configure mobile pairing service with the baseUrl from props
+        if (baseUrl) {
+          configureMobilePairingService({ baseUrl });
+        }
+
         if (enableProctoring) {
           await proctor.initializeProctoring();
           dispatch(setModalOpen(false));
@@ -186,7 +211,7 @@ const App = ({
         }
         dispatch(setAssessmentInfo(assessmentInfo));
         dispatch(setEnableProctoring(enableProctoring));
-        dispatch(setOnWorkflowComplete(callbacks?.onWorkflowComplete));
+        dispatch(setOnWorkflowComplete(handleWorkflowComplete));
         dispatch(setProctor(proctor));
         dispatch(setBulkStepEnabled(steps));
       } catch (error) {
@@ -196,14 +221,36 @@ const App = ({
     if (!initialised) {
       initializeProctoring();
       setInitialised(true);
+
+      if (!token) {
+        fetchAuthToken();
+      }
     }
   }, [assessmentInfo, baseUrl, callbacks, compatibilityCheckConfig,
-    config, dispatch, disqualificationConfig, enableAllAlerts, enableProctoring,
-    enableProctoringState, eventsConfig, headerOptions, initialised,
+    config, dispatch, disqualificationConfig, enableAllAlerts,
+    enableProctoring, enableProctoringState, eventsConfig,
+    handleWorkflowComplete, headerOptions, initialised,
     mobilePairingConfig, mockModeEnabled, proctor, qrCodeConfig,
-    screenshotConfig, snapshotConfig, steps]);
+    screenshotConfig, snapshotConfig, steps, fetchAuthToken, token]);
 
-  return <CompatibilityModal />;
+  return (
+    <>
+      <CompatibilityModal />
+      <ToastContainer
+        position="top-center"
+        toastClassName="text-base"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
+    </>
+  );
 };
 
 export default App;
