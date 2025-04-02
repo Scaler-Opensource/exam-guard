@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import Markdown from 'react-markdown';
 import rehypeSlug from 'rehype-slug';
 import rehypeRaw from 'rehype-raw';
+import { CustomLink } from '@/ui/CustomMarkdownComponents';
 
 const getMdComponent = (osName: string, browserName: string) => 
   React.lazy(() => 
@@ -11,28 +12,7 @@ const getMdComponent = (osName: string, browserName: string) =>
           <Markdown
             rehypePlugins={[rehypeSlug, rehypeRaw]}
             components={{
-              a: ({ href, children, ...props }) => {
-                // Handle internal links (anchor links) more cleanly
-                if (href?.startsWith('#')) {
-                  return (
-                    <a 
-                      href={href} 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const targetId = href.substring(1);
-                        const targetElement = document.getElementById(targetId);
-                        if (targetElement) {
-                          targetElement.scrollIntoView({ behavior: 'smooth' });
-                        }
-                      }}
-                      {...props}
-                    >
-                      {children}
-                    </a>
-                  );
-                }
-                return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
-              }
+              a: CustomLink
             }}
           >
             {module.default}
