@@ -1,8 +1,6 @@
 import React, { Suspense } from 'react';
 import Markdown from 'react-markdown';
-import rehypeSlug from 'rehype-slug';
-import rehypeRaw from 'rehype-raw';
-import { CustomLink } from '@/ui/CustomMarkdownComponents';
+import { CustomLink, H1, H2, H3, H4, H5, H6 } from '@/ui/CustomMarkdownComponents';
 
 const getMdComponent = (osName: string, browserName: string) => 
   React.lazy(() => 
@@ -10,9 +8,15 @@ const getMdComponent = (osName: string, browserName: string) =>
       .then(module => ({
         default: () => (
           <Markdown
-            rehypePlugins={[rehypeSlug, rehypeRaw]}
             components={{
-              a: CustomLink
+              a: CustomLink,
+              h1: H1,
+              h2: H2,
+              h3: H3,
+              h4: H4,
+              h5: H5,
+              h6: H6,
+              img: (props) => <img alt={props.alt || ''} {...props} />
             }}
           >
             {module.default}
