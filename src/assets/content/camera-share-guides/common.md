@@ -1,10 +1,15 @@
-### 📍 [Step 1: Check the Camera LED Indicator](#step-1-check-the-camera-led-indicator)  
-### 📍 [Step 2: Close Other Apps Using the Camera](#step-2-close-other-apps-using-the-camera)  
-### 📍 [Step 3: Check Browser Camera Permissions](#step-3-check-browser-camera-permissions)  
-### 📍 [Step 4: Verify System-Level Camera Permissions](#step-4-verify-system-level-camera-permissions)  
-### 📍 [Step 5: Check for Camera Block Shortcuts](#step-5-check-for-camera-block-shortcuts)  
-### 📍 [Step 6: Test Camera Preview](#step-6-test-camera-preview)  
-### 📍 [Step 7: Additional Troubleshooting](#step-7-additional-troubleshooting)  
+# **Scaler's Troubleshooting Guide: Laptop Camera Issues in Proctoring**
+
+Follow these steps to resolve common camera issues during proctoring.
+
+### �� [Step 1: Check the Camera LED Indicator](#step-1-check-the-camera-led-indicator)  
+### �� [Step 2: Close Other Apps Using the Camera](#step-2-close-other-apps-using-the-camera)  
+### �� [Step 3: Check Browser Camera Permissions](#step-3-check-browser-camera-permissions)  
+### �� [Step 4: Verify System-Level Camera Permissions](#step-4-verify-system-level-camera-permissions) 
+### �� [Step 5: Disconnect Mobile Devices That May Block Your Laptop Camera](#step-5-disconnect-mobile-devices-that-may-block-your-laptop-camera)   
+### �� [Step 6: Check for Camera Block Shortcuts](#step-6-check-for-camera-block-shortcuts)  
+### �� [Step 7: Test Camera Preview](#step-7-test-camera-preview)  
+### �� [Step 8: Additional Troubleshooting](#step-8-additional-troubleshooting)  
 
 ---
 
@@ -21,7 +26,7 @@
 - **Windows:** `Start > Settings > Privacy & Security > Camera`  
 - **Mac:** `Apple Menu > System Settings > Privacy & Security > Camera`  
 
-- 🔄 **Close all such apps** and restart your browser and try again
+- �� **Close all such apps** and restart your browser and try again
 
 📵 **Disable phone-based camera apps** that may interfere:  
    - Samsung Flow, Dell Mobile Connect, Apple Continuity Camera etc may interfere with your camera feed
@@ -75,7 +80,28 @@
 
 ---
 
-## **Step 5: Check for Camera Block Shortcuts**  
+## **Step 5: Disconnect Mobile Devices That May Block Your Laptop Camera**  
+🖥️ **Windows:**  
+
+![enter image description here](https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/138/461/original/image_%2810%29.png?1752215151)
+
+1. Open `Settings → Bluetooth & devices → Mobile devices`
+2. Disable the following toggles:
+   - **Allow this PC to access your mobile devices**
+   - **Phone Link**
+
+🖥️ **Mac:**  
+
+1. Open **System Settings** → **General** → **AirDrop & Handoff**
+2. Turn off the following:
+   - `Allow Handoff between this Mac and your iCloud devices`
+   - **AirDrop** (set to *Receiving Off*, if not required)
+
+
+---
+
+
+## **Step 6: Check for Camera Block Shortcuts**  
 ⌨️ **Physical Camera Switch:** Some laptops have a physical toggle/button for the webcam. Ensure it is **ON**. (Below image is an example of the same)
 ![enter image description here](https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/114/131/original/camera_switch.png?1742211762)
 ⌨️ **Function Key Lock:** Press `Fn + Camera (F8/F10)` to toggle camera access.  
@@ -83,7 +109,7 @@
 
 ---
 
-## **Step 6: Test Camera Preview**  
+## **Step 7: Test Camera Preview**  
 🔄 **Reload the Scaler proctoring page**.  
 📷 **Test the camera using:**  
   - **Windows:** Open the **Camera** app.  
@@ -91,7 +117,7 @@
 
 ---
 
-## **Step 7: Additional Troubleshooting**  
+## **Step 8: Additional Troubleshooting**  
 🔄 **Update camera drivers** via `Device Manager` (Windows) or `Software Update` (Mac).  
 🛠️ **Run the Windows Camera Troubleshooter** to detect and fix common issues.  
 🔐 **Check antivirus/firewall settings** that may be blocking camera access.  
