@@ -87,14 +87,18 @@ const DisqualificationTimerBar: React.FC<DisqualificationTimerBarProps> = ({
   };
 
   useEffect(() => {
+    // Only reset timer when modal opens or when failing steps change (getMaxTime changes)
     setTimeLeft(getMaxTime);
+  }, [modalOpen, getMaxTime]);
 
+  useEffect(() => {
+    // Handle audio separately to avoid timer reset on activeStep change
     if (beepConfig?.enabled && beepConfig.sounds && beepConfig.sounds[activeStep]) {
       handleAudio(beepConfig.sounds[activeStep]);
     }
 
     return stopAudio;
-  }, [modalOpen, getMaxTime, activeStep, beepConfig]);
+  }, [activeStep, beepConfig]);
 
   useEffect(() => {
     if (timeLeft <= 0) {

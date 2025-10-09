@@ -244,7 +244,7 @@ const App = ({
       <ToastContainer
         position="top-center"
         toastClassName="text-base"
-        autoClose={5000}
+        autoClose={8000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick={false}
