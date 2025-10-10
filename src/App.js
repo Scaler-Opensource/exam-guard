@@ -24,6 +24,8 @@ import Proctor from '@/proctor';
 import ScreenShareHandlers from '@/store/handlers/screenShare';
 import WebcamHandlers from '@/store/handlers/webcam';
 
+import { TOAST_AUTO_CLOSE_DURATION } from '@/utils/constants';
+
 import 'react-toastify/dist/ReactToastify.css';
 
 const App = ({
@@ -244,7 +246,7 @@ const App = ({
       <ToastContainer
         position="top-center"
         toastClassName="text-base"
-        autoClose={5000}
+        autoClose={TOAST_AUTO_CLOSE_DURATION}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick={false}
