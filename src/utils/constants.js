@@ -38,3 +38,4 @@ export const PAIRING_STEPS = {
 };
 
 export const MIN_SNAPSHOT_COUNT = 3;
+export const TOAST_AUTO_CLOSE_DURATION = 8000;
