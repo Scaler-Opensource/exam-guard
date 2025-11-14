@@ -1,11 +1,10 @@
 import { VIOLATIONS } from '../constants';
 import { getIsBrowserBlurred } from './browserBlur';
 
-let visibilityChangeHandler = null;
-
 export default function detectTabSwitch(handleViolation) {
-  visibilityChangeHandler = () => {
-    if (document.hidden && !getIsBrowserBlurred()) {
+  const visibilityChangeHandler = () => {
+    const isBlurred = getIsBrowserBlurred();
+    if (document.hidden && !!isBlurred) {
       handleViolation(VIOLATIONS.tabSwitch);
     }
   };
