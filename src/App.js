@@ -46,6 +46,7 @@ const App = ({
   initConfig,
   enableProctoring: enableProctoringProp = false,
   beepConfig,
+  networkConfig,
 }) => {
   const dispatch = useAppDispatch();
   const { enableProctoring: enableProctoringState } = useAppSelector(
@@ -110,6 +111,7 @@ const App = ({
       screenshotConfig,
       compatibilityCheckConfig,
       mobilePairingConfig,
+      networkConfig,
       callbacks: {
         onScreenShareSuccess: (...args) => {
           callbacks?.onScreenShareSuccess?.(...args);
@@ -164,6 +166,9 @@ const App = ({
           callbacks?.onCompatibilityCheckFail?.(...args);
           compatibilityHandlers.handleCompatibilityCheckFail(...args);
         },
+        onNetworkUpdate: (...args) => {
+          callbacks?.onNetworkUpdate?.(...args);
+        },
       },
       enableAllAlerts,
       headerOptions,
@@ -188,6 +193,7 @@ const App = ({
     snapshotConfig,
     steps,
     beepConfig,
+    networkConfig,
   ]);
 
   const handleWorkflowComplete = useCallback(() => {

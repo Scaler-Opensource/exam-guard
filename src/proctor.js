@@ -58,6 +58,7 @@ import { getBrowserInfo } from './utils/browser';
 import { getIndexDbBufferInstance } from './utils/indexDbBuffer';
 import ViolationWorker from './workers/violation.worker';
 import CompatibilityWorker from './workers/compatibility.worker';
+import NetworkWorker from './workers/network.worker';
 
 export default class Proctor {
   constructor({
@@ -74,6 +75,7 @@ export default class Proctor {
     mobilePairingConfig = {},
     qrCodeConfig = {},
     workerConfig = {},
+    networkConfig = {},
   }) {
     this.baseUrl = baseUrl;
     this.eventsConfig = {
@@ -289,6 +291,13 @@ export default class Proctor {
       resizeTo: DEFAULT_SCREENSHOT_RESIZE_OPTIONS,
       ...screenshotConfig,
     };
+    this.networkConfig = {
+      enabled: false,
+      interval: 5000, // 5 seconds
+      testResourceURL: 'https://dajh2p2mfq4ra.cloudfront.net/assets/icons/ib-logo-hire-8f3406787bc4241628bb7e5bea43d56a7ab275401134c297b6631c8b81cd3996.png',
+      timeoutMs: 10000, // 10 seconds
+      ...networkConfig,
+    };
     this.callbacks = {
       onDisqualified: callbacks.onDisqualified || (() => { }),
       onWebcamDisabled: callbacks.onWebcamDisabled || (() => { }),
@@ -306,6 +315,7 @@ export default class Proctor {
         callbacks.onCompatibilityCheckSuccess || (() => { }),
       onCompatibilityCheckFail:
         callbacks.onCompatibilityCheckFail || (() => { }),
+      onNetworkUpdate: callbacks.onNetworkUpdate || (() => { }),
     };
     this.violationEvents = [];
     this.recordedViolationEvents = []; // Store events for batch sending
@@ -337,6 +347,7 @@ export default class Proctor {
     this.workerConfig = {
       violationWorkerUrl: null,
       compatibilityWorkerUrl: null,
+      networkWorkerUrl: null,
       ...workerConfig,
     };
 
@@ -381,6 +392,8 @@ export default class Proctor {
         maxFrequency: this.compatibilityCheckConfig.maxFrequency,
       },
     });
+
+    this.networkWorker = null;
   }
 
   async initializeProctoring() {
@@ -483,9 +496,52 @@ export default class Proctor {
       });
     }
 
+    if (this.networkConfig.enabled) {
+      this.startNetworkMonitoring();
+    }
+
     // Listen to tab close or exit
     this.handleWindowUnload();
     this.startCompatibilityChecks();
+  }
+
+  startNetworkMonitoring() {
+    if (this.networkWorker) return;
+
+    this.networkWorker = this.workerConfig.networkWorkerUrl
+      ? new Worker(this.workerConfig.networkWorkerUrl, { type: 'classic' })
+      : new NetworkWorker();
+
+    this.networkWorker.onmessage = (event) => {
+      const { type, payload } = event.data;
+      if (type === 'NETWORK_UPDATE') {
+        this.handleNetworkUpdate(payload);
+      }
+    };
+
+    this.networkWorker.postMessage({
+      type: 'START',
+      payload: {
+        interval: this.networkConfig.interval,
+        testResourceURL: this.networkConfig.testResourceURL,
+        timeoutMs: this.networkConfig.timeoutMs,
+        ...this.networkConfig,
+      }
+    });
+  }
+
+  handleNetworkUpdate(metric) {
+    if (this.callbacks.onNetworkUpdate) {
+      this.callbacks.onNetworkUpdate(metric);
+    }
+  }
+
+  stopNetworkMonitoring() {
+    if (this.networkWorker) {
+      this.networkWorker.postMessage({ type: 'STOP' });
+      this.networkWorker.terminate();
+      this.networkWorker = null;
+    }
   }
 
   startCompatibilityChecks() {
@@ -951,6 +1007,7 @@ export default class Proctor {
   _cleanup() {
     this.violationWorker.postMessage({ type: 'CLEANUP' });
     this.violationWorker.terminate();
+    this.stopNetworkMonitoring();
     this.stopCompatibilityChecks();
     screenshareCleanup();
     this.queueManager.cleanup();

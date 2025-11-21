@@ -20,3 +20,61 @@ export async function checkBandwidth() {
     download.src = `${imageLocation}?t=${Date.now()}`;
   });
 }
+
+
+export async function checkBandwidthV2(testResourceURL, timeoutMs) {
+  if (navigator.onLine === false) {
+    return { speedKbps: 0, error: 'NETWORK OFFLINE' };
+  }
+
+  const getNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+  const cacheBuster = `?t=${Date.now()}&r=${Math.random()}`;
+  const url = `${testResourceURL}${cacheBuster}`;
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      return { speedKbps: 0, error: `Server Error: ${response.status}` };
+    }
+
+    const headerSize = response.headers.get('Content-Length');
+    
+    const startTime = getNow();
+    const blob = await response.blob();
+    const endTime = getNow();
+    
+    clearTimeout(timeoutId);
+
+    const durationMs = (endTime - startTime); 
+    const durationSeconds = (durationMs < 1 ? 1 : durationMs) / 1000;
+
+    let sizeInBytes = 0;
+    if (headerSize && !isNaN(parseInt(headerSize))) {
+      sizeInBytes = parseInt(headerSize);
+    } else {
+      sizeInBytes = blob.size;
+    }
+
+    if (!sizeInBytes) {
+      return { speedKbps: 0, error: 'Empty response or unknown size' };
+    }
+
+    const sizeInBits = sizeInBytes * 8;
+    const speedKbps = (sizeInBits / 1024) / durationSeconds;
+
+    return { speedKbps };
+
+  } catch (error) {
+    return { speedKbps: 0, error: error.message };
+  }
+}
