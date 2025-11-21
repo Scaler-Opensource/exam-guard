@@ -8,6 +8,7 @@ import {
   SNAPSHOT_SCREENSHOT_FREQUENCY,
   VIOLATIONS,
   DEFAULT_HEADERS_CONTENT_TYPE,
+  NETWORK_OPTIONS,
 } from './utils/constants';
 import {
   dispatchGenericViolationEvent,
@@ -293,9 +294,9 @@ export default class Proctor {
     };
     this.networkConfig = {
       enabled: false,
-      interval: 5000, // 5 seconds
-      testResourceURL: 'https://dajh2p2mfq4ra.cloudfront.net/assets/icons/ib-logo-hire-8f3406787bc4241628bb7e5bea43d56a7ab275401134c297b6631c8b81cd3996.png',
-      timeoutMs: 10000, // 10 seconds
+      interval: NETWORK_OPTIONS.interval,
+      testResourceURL: NETWORK_OPTIONS.testResourceURL,
+      timeoutMs: NETWORK_OPTIONS.timeoutMs, 
       ...networkConfig,
     };
     this.callbacks = {
