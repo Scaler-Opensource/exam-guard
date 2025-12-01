@@ -296,7 +296,9 @@ export default class Proctor {
       enabled: false,
       interval: NETWORK_OPTIONS.interval,
       testResourceURL: NETWORK_OPTIONS.testResourceURL,
-      timeoutMs: NETWORK_OPTIONS.timeoutMs, 
+      timeoutMs: NETWORK_OPTIONS.timeoutMs,
+      speedThresholdMbps: NETWORK_OPTIONS.speedThresholdMbps,
+      alertCooldownSec: NETWORK_OPTIONS.alertCooldownSec,
       ...networkConfig,
     };
     this.callbacks = {
@@ -395,6 +397,7 @@ export default class Proctor {
     });
 
     this.networkWorker = null;
+    this.lastNetworkAlertTimestamp = 0;
   }
 
   async initializeProctoring() {
@@ -534,6 +537,28 @@ export default class Proctor {
   handleNetworkUpdate(metric) {
     if (this.callbacks.onNetworkUpdate) {
       this.callbacks.onNetworkUpdate(metric);
+    }
+
+    const { speedThresholdMbps, alertCooldownSec } = this.networkConfig;
+    const { speedKbps, error } = metric;
+    const currentTime = Date.now();
+
+    const isBadReading = error || (speedKbps < speedThresholdMbps * 1024);
+
+    if (isBadReading) {
+      const timeSinceLastAlert = (currentTime - this.lastNetworkAlertTimestamp) / 1000;
+
+      if (timeSinceLastAlert >= alertCooldownSec) {
+        this.lastNetworkAlertTimestamp = currentTime;
+        showViolationWarning(
+          'Weak Network Detected',
+          'Connect to a stronger internet to avoid issues during your contest',
+          false,
+          true,
+        );
+      }
+    } else {
+      closeModal(true);
     }
   }
 
