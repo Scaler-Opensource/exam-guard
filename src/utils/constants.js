@@ -39,3 +39,11 @@ export const PAIRING_STEPS = {
 
 export const MIN_SNAPSHOT_COUNT = 3;
 export const TOAST_AUTO_CLOSE_DURATION = 8000;
+
+export const NETWORK_OPTIONS = {
+  interval: 5000,
+  testResourceURL: 'https://dajh2p2mfq4ra.cloudfront.net/assets/icons/ib-logo-hire-8f3406787bc4241628bb7e5bea43d56a7ab275401134c297b6631c8b81cd3996.png',
+  timeoutMs: 10000,
+  speedThresholdMbps: 1,
+  alertCooldownSec: 60,
+};

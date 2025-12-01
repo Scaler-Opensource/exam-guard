@@ -4,6 +4,10 @@ $warning-modal-icon-bg-color: #851a2d;
 $warning-modal-action-font-color: #a42137;
 $warning-modal-action-bg-color: white;
 
+$warning-modal-networkAlert-bg-color: #d97706;
+$warning-modal-networkAlert-icon-bg-color: #b45309;
+$warning-modal-networkAlert-action-font-color: #b45309;
+
 .warning-modal {
   display: none;
   padding: 1.6rem 2rem 2.4rem;
@@ -63,5 +67,18 @@ $warning-modal-action-bg-color: white;
     border-radius: 0.4rem;
     font-weight: 600;
     margin-top: 2.4rem;
+  }
+
+  &--networkAlert {
+    background-color: $warning-modal-networkAlert-bg-color;
+
+    .warning-modal__close-btn,
+    .warning-modal__icon-wrap {
+      background-color: $warning-modal-networkAlert-icon-bg-color;
+    }
+
+    .warning-modal__action {
+      color: $warning-modal-networkAlert-action-font-color;
+    }
   }
 }

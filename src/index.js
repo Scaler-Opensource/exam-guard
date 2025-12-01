@@ -30,6 +30,7 @@ class ProctorLibrary {
       headerOptions: {},
       mockModeEnabled: false,
       additionalData: {},
+      networkConfig: {},
     };
 
     const root = createRoot(container);

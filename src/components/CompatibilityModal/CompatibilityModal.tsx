@@ -20,15 +20,15 @@ import ScreenShareStep from '@/components/ScreenShareStep';
 import SystemChecksStep from '@/components/SystemChecksStep';
 
 const ALL_STEPS: Record<string, Step> = {
-  screenShare: {
-    icon: Monitor,
-    title: 'Screen Share Permissions',
-    component: <ScreenShareStep />,
-  },
   cameraShare: {
     icon: Camera,
     title: 'Desktop Camera Permissions',
     component: <DesktopCameraStep />,
+  },
+  screenShare: {
+    icon: Monitor,
+    title: 'Screen Share Permissions',
+    component: <ScreenShareStep />,
   },
   mobileCameraShare: {
     icon: Smartphone,

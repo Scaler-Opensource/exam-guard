@@ -10,11 +10,20 @@
     html {
       font-size: 10px;
     }
+    .status-good { color: green; font-weight: bold; }
+    .status-poor { color: red; font-weight: bold; }
+    .status-offline { color: darkred; background: #ffd1d1; padding: 5px; }
   </style>
 </head>
 
 <body>
   <h1 class="text-3xl font-bold mb-4">Proctoring Library Test</h1>
+
+  <div class="mb-4" style="border: 1px solid #ccc; padding: 10px; border-radius: 8px;">
+    <h2 class="text-2xl font-semibold mb-2">Network Health</h2>
+    <div id="network-display">Waiting for data...</div>
+  </div>
+
   <div class="mb-4">
     <h2 class="text-2xl font-semibold mb-2">Captured Snapshot:</h2>
     <img id="snapshot" alt="Snapshot will appear here" class="max-w-full h-auto" />
@@ -48,6 +57,10 @@
           },
         },
       },
+      networkConfig: {
+        enabled: true,
+        interval: 5000, // Check every 5 seconds for testing   
+      },
       config: {
         tabSwitch: {
           enabled: true,
@@ -77,6 +90,29 @@
         onWorkflowComplete: () => {
           console.error('onWorkflowComplete triggered');
         },
+
+        onNetworkUpdate: (metric) => {
+          // console.log('Network Update:', metric);
+          const displayEl = document.getElementById('network-display');
+
+          if (metric.error) {
+            displayEl.innerHTML = `<span class="status-offline">⚠️ Error: ${metric.error}</span>`;
+            return;
+          }
+
+          const speedKbps = metric.speedKbps;
+          const speedMbps = (speedKbps / 1024).toFixed(2);
+          
+          let statusHtml = '';
+          if (speedKbps < 500) {
+             statusHtml = `<span class="status-poor">POOR (${speedMbps} Mbps)</span> - Video may lag`;
+          } else {
+             statusHtml = `<span class="status-good">GOOD (${speedMbps} Mbps)</span>`;
+          }
+
+          displayEl.innerHTML = `Current Speed: ${statusHtml} <br><small>Last check: ${new Date(metric.timestamp).toLocaleTimeString()}</small>`;
+        },
+
         onSnapshotSuccess: ({ blob }) => {
           console.log('onSnapshotSuccess', blob);
           const snapshotImg = document.getElementById('snapshot');
