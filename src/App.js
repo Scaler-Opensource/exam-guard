@@ -65,13 +65,13 @@ const App = ({
 
   const steps = useMemo(
     () => ({
-      screenShare: {
-        step: 'screenShare',
-        enabled: enabledScreenshotConfig ?? true,
-      },
       cameraShare: {
         step: 'cameraShare',
         enabled: enabledSnapshotConfig ?? true,
+      },
+      screenShare: {
+        step: 'screenShare',
+        enabled: enabledScreenshotConfig ?? true,
       },
       mobileCameraShare: {
         step: 'mobileCameraShare',

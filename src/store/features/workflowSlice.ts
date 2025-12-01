@@ -33,10 +33,10 @@ const initialState: WorkflowState = {
   enableProctoring: false,
   modalOpen: false,
   isDisqualified: false,
-  activeStep: 'screenShare',
+  activeStep: 'cameraShare',
   steps: {
-    screenShare: createStep(['screenShare'], false),
-    cameraShare: createStep(['cameraShare']),
+    cameraShare: createStep(['cameraShare'], false),
+    screenShare: createStep(['screenShare']),
     mobileCameraShare: createStep([
       'codeScan',
       'cameraPairing',
