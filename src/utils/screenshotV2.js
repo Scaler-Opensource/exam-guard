@@ -316,6 +316,10 @@ async function setupScreenshotCaptureFromScreenShareNew({
   resizeDimensions,
   disableScreenshot,
 }) {
+  if (window.isTestEnding) {
+    return;
+  }
+
   const [success] = await isScreenShareValid({});
   if (success) return;
 

@@ -579,6 +579,10 @@ export default class Proctor {
   }
 
   runAdaptiveCompatibilityChecks() {
+    if (window.isTestEnding) {
+      return;
+    }
+
     const start = performance.now();
     // MB (adjust this as per your requirement)
     const { memoryLimit } = this.compatibilityCheckConfig;
@@ -871,6 +875,11 @@ export default class Proctor {
   }
 
   handleScreenShareEnd() {
+    // Don't record violation if test is intentionally ending
+    if (window.isTestEnding) {
+      return;
+    }
+
     this.handleViolation(VIOLATIONS.screenshareExit);
     this.callbacks.onScreenShareEnd();
   }
@@ -913,6 +922,11 @@ export default class Proctor {
   }
 
   handleFullScreenDisabled() {
+    // Don't try to re-request fullscreen or record violation if test is ending
+    if (window.isTestEnding) {
+      return;
+    }
+
     if (!this.initialFullScreen) {
       requestFullScreen();
       this.initialFullScreen = true;
