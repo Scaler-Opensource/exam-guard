@@ -9,32 +9,9 @@ import IntroTab from './IntroTab';
 import CompatibilityChecksTab from './CompatibilityChecksTab';
 import ConsentTab from './ConsentTab';
 
-
 const MemoizedIntroTab = React.memo(IntroTab);
 const MemoizedCompatibilityChecksTab = React.memo(CompatibilityChecksTab);
 const MemoizedConsentTab = React.memo(ConsentTab);
-
-const getSectionFromSubStep = (activeSubStep) => {
-  if (activeSubStep === PREREQUISITE_STEPS.intro) return 'intro';
-  if (COMPATIBILITY_CHECK_SUBSTEPS.includes(activeSubStep)) return 'compatibility';
-  if (activeSubStep === PREREQUISITE_STEPS.consent) return 'consent';
-  return 'intro';
-};
-
-const getSegmentFromSubStep = (activeSubStep) => {
-  if (activeSubStep === PREREQUISITE_STEPS.intro) return 1;
-  if (COMPATIBILITY_CHECK_SUBSTEPS.includes(activeSubStep)) return 2;
-  if (activeSubStep === PREREQUISITE_STEPS.consent) return 3;
-  return 1;
-};
-
-const isCompatibilityCompleted = (subSteps) => {
-  return COMPATIBILITY_CHECK_SUBSTEPS.every((key) => {
-    const substep = subSteps?.[key];
-    if (!substep?.enabled) return true;
-    return substep.status === 'completed';
-  });
-};
 
 const PrerequisitesStep = () => {
   const dispatch = useAppDispatch();
@@ -47,9 +24,31 @@ const PrerequisitesStep = () => {
     [subSteps],
   );
 
-  const activeSection = getSectionFromSubStep(activeSubStep);
-  
-  const currentSegment = getSegmentFromSubStep(activeSubStep);
+  const isCompatibilitySegmentEnabled = useMemo(() => {
+    return (
+      subSteps?.systemChecks?.enabled ||
+      subSteps?.networkChecks?.enabled ||
+      subSteps?.fullScreenCheck?.enabled
+    );
+  }, [subSteps]);
+
+  const { activeSection, currentSegment } = useMemo(() => {
+    let section = 'intro';
+    let segment = 1;
+
+    if (activeSubStep === PREREQUISITE_STEPS.intro) {
+      section = 'intro';
+      segment = 1;
+    } else if (isCompatibilitySegmentEnabled && COMPATIBILITY_CHECK_SUBSTEPS.includes(activeSubStep)) {
+      section = 'compatibility';
+      segment = 2;
+    } else if (activeSubStep === PREREQUISITE_STEPS.consent) {
+      section = 'consent';
+      segment = isCompatibilitySegmentEnabled ? 3 : 2;
+    }
+
+    return { activeSection: section, currentSegment: segment };
+  }, [activeSubStep, isCompatibilitySegmentEnabled]);
 
   useEffect(() => {
     if (subSteps?.[PREREQUISITE_STEPS.intro]?.status === 'locked') {
@@ -71,15 +70,21 @@ const PrerequisitesStep = () => {
         status={status}
         showIcon={false}
         progressBar={{
-          segments: 3,
-          currentSegment: currentSegment, 
+          segments: isCompatibilitySegmentEnabled ? 3 : 2,
+          currentSegment: currentSegment,
         }}
       />
 
-        <div className="flex-1 pt-20 h-full">
-        {activeSection === 'intro' && <MemoizedIntroTab />}
-        {activeSection === 'compatibility' && <MemoizedCompatibilityChecksTab />}
-        {activeSection === 'consent' && <MemoizedConsentTab />}
+      <div className="flex-1 pt-20 h-full">
+        {activeSection === 'intro' && (
+          <MemoizedIntroTab isCompatibilitySegmentEnabled={isCompatibilitySegmentEnabled} />
+        )}
+        {activeSection === 'compatibility' && (
+          <MemoizedCompatibilityChecksTab />
+        )}
+        {activeSection === 'consent' && (
+          <MemoizedConsentTab isCompatibilitySegmentEnabled={isCompatibilitySegmentEnabled} />
+        )}
       </div>
     </div>
   );

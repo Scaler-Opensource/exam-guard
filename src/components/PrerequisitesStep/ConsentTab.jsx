@@ -7,7 +7,7 @@ import { nextStep, selectStep, setActiveSubStep, setStepAcknowledged, setSubStep
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import { PREREQUISITE_STEPS } from '@/utils/constants';
 
-const ConsentTab = () => {
+const ConsentTab = ({ isCompatibilitySegmentEnabled }) => {
 
   const dispatch = useAppDispatch();
 
@@ -36,12 +36,22 @@ const ConsentTab = () => {
   };
 
   const handleGoBack = () => {
-    dispatch(
-      setActiveSubStep({
-        step: 'prerequisites',
-        subStep: PREREQUISITE_STEPS.systemChecks,
-      }),
-    );
+    if (isCompatibilitySegmentEnabled) {
+      dispatch(
+        setActiveSubStep({
+          step: 'prerequisites',
+          subStep: PREREQUISITE_STEPS.systemChecks,
+        }),
+      );
+    } else {
+      dispatch(
+        setActiveSubStep({
+          step: 'prerequisites',
+          subStep: PREREQUISITE_STEPS.intro,
+        }),
+      );
+    }
+
   };
 
   return (

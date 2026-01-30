@@ -573,9 +573,9 @@ export default class Proctor {
   startCompatibilityChecks() {
     if (!this.compatibilityCheckConfig.enable) return;
 
-    this.compatibilityCheckInterval = setTimeout(() => {
-      this.runAdaptiveCompatibilityChecks();
-    }, this.compatibilityCheckConfig.frequency);
+    // this.compatibilityCheckInterval = setTimeout(() => {
+    this.runAdaptiveCompatibilityChecks();
+    // }, this.compatibilityCheckConfig.frequency);
   }
 
   runAdaptiveCompatibilityChecks() {
@@ -914,7 +914,7 @@ export default class Proctor {
 
   handleFullScreenDisabled() {
     if (!this.initialFullScreen) {
-      requestFullScreen();
+      // requestFullScreen(); // can not request without user interaction
       this.initialFullScreen = true;
     } else {
       this.handleViolation(VIOLATIONS.fullScreen);
@@ -924,6 +924,10 @@ export default class Proctor {
 
   handleFullScreenEnabled() {
     this.callbacks.onFullScreenEnabled();
+    this.runCompatibilityChecks(
+      this.handleCompatibilitySuccess.bind(this),
+      this.handleCompatibilityFailure.bind(this),
+    );
   }
 
   handleCompatibilityChecks({ forceRun = false } = {}) {

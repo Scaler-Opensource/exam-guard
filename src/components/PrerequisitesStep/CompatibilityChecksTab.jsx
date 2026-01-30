@@ -29,83 +29,78 @@ const CompatibilityChecksTab = () => {
   const stepData = useAppSelector((state) => selectStep(state, 'prerequisites')) || {};
   const subSteps = stepData.subSteps || {};
 
-  const [visualStatuses, setVisualStatuses] = useState({
-    systemChecks: 'locked',
-    networkChecks: 'locked',
-    fullScreenCheck: 'locked',
+  const enabledCheckSubsteps = useMemo(() => {
+     return COMPATIBILITY_CHECK_SUBSTEPS.filter(
+      (key) => subSteps?.[key]?.enabled !== false
+    );
+  }, []);
+
+  const [visualStatuses, setVisualStatuses] = useState(() => {
+    const initial = {};
+    enabledCheckSubsteps.forEach((key, index) => {
+      initial[key] = index === 0 ? 'pending' : 'locked';
+    });
+    return initial;
   });
 
-  const [currentCheckIndex, setCurrentCheckIndex] = useState(-1);
+  const [currentCheckIndex, setCurrentCheckIndex] = useState(0);
   const [networkSpeed, setNetworkSpeed] = useState(0);
-
-  const loaderStartTime = useRef(null);
-  const isMounted = useRef(false);
+  const loaderStartTime = useRef(Date.now());
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
 
+  const updateFullScreenStatus = useCallback(() => {
+    if (!enabledCheckSubsteps.includes('fullScreenCheck')) return;
+    const isFull = isFullScreen();
+    dispatch(
+      setSubStepStatus({
+        step: 'prerequisites',
+        subStep: 'fullScreenCheck',
+        status: isFull ? 'completed' : 'error',
+        clearError: isFull,
+      })
+    );
+  }, [dispatch, enabledCheckSubsteps]);
+
   useEffect(() => {
     if (enableProctoring) return;
+    if (enabledCheckSubsteps.length === 0) return;
 
-    setVisualStatuses({
-      systemChecks: 'pending',
-      networkChecks: 'locked',
-      fullScreenCheck: 'locked',
-    });
-    setCurrentCheckIndex(0);
-    loaderStartTime.current = Date.now();
-
-    const runBrowserChecks = () => {
-      const browserInfo = getBrowserInfo();
-      const isBrowserSupported = browserInfo.isSupported;
-      dispatch(
-        setSubStepStatus({
+    const runChecks = async () => {
+      if (enabledCheckSubsteps.includes('systemChecks')) {
+        const { isSupported } = getBrowserInfo();
+        dispatch(setSubStepStatus({
           step: 'prerequisites',
           subStep: 'systemChecks',
-          status: isBrowserSupported ? 'completed' : 'error',
-        })
-      );
-    };
+          status: isSupported ? 'completed' : 'error',
+        }));
+      }
 
-    const updateFullScreenStatus = () => {
-      const isFull = isFullScreen();
-      dispatch(
-        setSubStepStatus({
-          step: 'prerequisites',
-          subStep: 'fullScreenCheck',
-          status: isFull ? 'completed' : 'error',
-          clearError: isFull,
-        })
-      );
-    };
-
-    const runNetworkCheck = async () => {
-      try {
-        const { speedKbps } = await checkBandwidthV2(BANDWIDTH_CHECK_URL, BANDWIDTH_TIMEOUT);
-        if (!isMounted.current) return;
-        setNetworkSpeed(speedKbps);
-
-        dispatch(
-          setSubStepStatus({
-            step: 'prerequisites',
-            subStep: 'networkChecks',
-            status: speedKbps >= 1024 ? 'completed' : 'error',
-          })
-        );
-      } catch (err) {
-        if (!isMounted.current) return;
-        dispatch(setSubStepStatus({ step: 'prerequisites', subStep: 'networkChecks', status: 'error' }));
+      if (enabledCheckSubsteps.includes('networkChecks')) {
+        try {
+          const { speedKbps } = await checkBandwidthV2(BANDWIDTH_CHECK_URL, BANDWIDTH_TIMEOUT);
+          if (isMounted.current) {
+            setNetworkSpeed(speedKbps);
+            dispatch(setSubStepStatus({
+              step: 'prerequisites',
+              subStep: 'networkChecks',
+              status: speedKbps >= 1024 ? 'completed' : 'error',
+            }));
+          }
+        } catch (e) {
+          if (isMounted.current) {
+            dispatch(setSubStepStatus({ step: 'prerequisites', subStep: 'networkChecks', status: 'error' }));
+          }
+        }
       }
     };
 
-    runBrowserChecks();
-
-    runNetworkCheck();
-
+    runChecks();
+    
     updateFullScreenStatus();
-
     document.addEventListener('fullscreenchange', updateFullScreenStatus);
     document.addEventListener('webkitfullscreenchange', updateFullScreenStatus);
 
@@ -113,73 +108,54 @@ const CompatibilityChecksTab = () => {
       document.removeEventListener('fullscreenchange', updateFullScreenStatus);
       document.removeEventListener('webkitfullscreenchange', updateFullScreenStatus);
     };
-  }, [dispatch, enableProctoring]);
+  }, [dispatch, enableProctoring, enabledCheckSubsteps, updateFullScreenStatus]);
+
 
   useEffect(() => {
-    if (enableProctoring) return;
-    if (currentCheckIndex < 0 || currentCheckIndex >= COMPATIBILITY_CHECK_SUBSTEPS.length) {
-      return;
-    }
+    if (enableProctoring || currentCheckIndex >= enabledCheckSubsteps.length) return;
 
-    const currentCheckKey = COMPATIBILITY_CHECK_SUBSTEPS[currentCheckIndex];
-    const reduxStatus = subSteps?.[currentCheckKey]?.status;
-    const isDone = reduxStatus === 'completed' || reduxStatus === 'error';
+    const currentKey = enabledCheckSubsteps[currentCheckIndex];
+    const realStatus = subSteps?.[currentKey]?.status;
 
-    if (isDone) {
-      const elapsed = Date.now() - (loaderStartTime.current || Date.now());
-      const remainingLoaderTime = Math.max(0, MIN_LOADER_TIME - elapsed);
+    if (realStatus === 'completed' || realStatus === 'error') {
+      const elapsed = Date.now() - loaderStartTime.current;
+      const remainingTime = Math.max(0, MIN_LOADER_TIME - elapsed);
 
-      const timer = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         if (!isMounted.current) return;
 
-        setVisualStatuses((prev) => ({
-          ...prev,
-          [currentCheckKey]: reduxStatus,
-        }));
+        setVisualStatuses(prev => ({ ...prev, [currentKey]: realStatus }));
 
-        if (currentCheckIndex < COMPATIBILITY_CHECK_SUBSTEPS.length - 1) {
-          const nextIndex = currentCheckIndex + 1;
-          const nextCheckKey = COMPATIBILITY_CHECK_SUBSTEPS[nextIndex];
-
-          setVisualStatuses((prev) => ({
-            ...prev,
-            [nextCheckKey]: 'pending',
-          }));
-          setCurrentCheckIndex(nextIndex);
+        if (currentCheckIndex < enabledCheckSubsteps.length - 1) {
+          const nextKey = enabledCheckSubsteps[currentCheckIndex + 1];
+          setVisualStatuses(prev => ({ ...prev, [nextKey]: 'pending' }));
+          setCurrentCheckIndex(prev => prev + 1);
           loaderStartTime.current = Date.now();
         }
-      }, remainingLoaderTime);
+      }, remainingTime);
 
-      return () => clearTimeout(timer);
+      return () => clearTimeout(timeoutId);
     }
-  }, [currentCheckIndex, subSteps]);
+  }, [currentCheckIndex, subSteps, enabledCheckSubsteps, enableProctoring]);
 
   const areAllVisuallyCompleted = useMemo(() => {
-    return COMPATIBILITY_CHECK_SUBSTEPS.every((key) => {
-      const status = visualStatuses[key];
-      return status === 'completed' || status === 'error';
-    });
-  }, [visualStatuses]);
+    return enabledCheckSubsteps.every(key => ['completed', 'error'].includes(visualStatuses[key]));
+  }, [visualStatuses, enabledCheckSubsteps]);
 
   const hasError = useMemo(() => {
-    return COMPATIBILITY_CHECK_SUBSTEPS.some((key) => {
-      if (NON_BLOCKING_ERRORS.includes(key)) return false;
-      return subSteps?.[key]?.status === 'error';
-    });
-  }, [subSteps]);
+    return enabledCheckSubsteps.some(key =>
+      !NON_BLOCKING_ERRORS.includes(key) && subSteps?.[key]?.status === 'error'
+    );
+  }, [subSteps, enabledCheckSubsteps]);
 
-  const handleNext = useCallback(() => {
+  const handleNext = () => {
     dispatch(setSubStepStatus({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.consent, status: 'pending' }));
     dispatch(setActiveSubStep({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.consent }));
-  }, [dispatch]);
+  };
 
-  const handleGoBack = useCallback(() => {
+  const handleGoBack = () => {
     dispatch(setActiveSubStep({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.intro }));
-  }, [dispatch]);
-
-  const handleConfirmSettings = useCallback(() => {
-    proctor?.handleCompatibilityChecks({ forceRun: true });
-  }, [proctor]);
+  };
 
   return (
     <div className="h-full min-h-fit w-full flex flex-col justify-between gap-20 items-start">
@@ -205,7 +181,7 @@ const CompatibilityChecksTab = () => {
           </a>
         </div>
 
-        {!enableProctoring && (
+        {!enableProctoring ? (
           <div className="flex items-center gap-5">
             <Button
               variant="primary"
@@ -214,32 +190,21 @@ const CompatibilityChecksTab = () => {
               disabled={!areAllVisuallyCompleted || hasError}
               className="px-20 text-sm font-normal disabled:bg-[#D6DEE5] disabled:opacity-100 disabled:text-[#91A1B7]"
             >
-              Next
-              <ArrowRight className="w-6 h-6 ml-2" />
+              Next <ArrowRight className="w-6 h-6 ml-2" />
             </Button>
-
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleGoBack}
-              className="px-8 font-normal text-sm"
-            >
+            <Button variant="outline" size="lg" onClick={handleGoBack} className="px-8 font-normal text-sm">
               Go back
             </Button>
           </div>
-        )}
-
-        {enableProctoring && (
-          <div className="flex items-center gap-4">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handleConfirmSettings}
-              className="px-20 text-sm font-normal disabled:bg-[#D6DEE5] disabled:opacity-100 disabled:text-[#91A1B7]"
-            >
-              Confirm Settings
-            </Button>
-          </div>
+        ) : (
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => proctor?.handleCompatibilityChecks({ forceRun: true })}
+            className="px-20 text-sm font-normal"
+          >
+            Confirm Settings
+          </Button>
         )}
       </div>
     </div>

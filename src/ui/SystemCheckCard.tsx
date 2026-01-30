@@ -81,7 +81,7 @@ export default function SystemCheckCard({ statusOverrides, networkSpeed }: Syste
         icon: <CircleCheck className='w-12 h-12 text-white fill-green-600' />,
       },
       error: {
-        title: `Very Poor Network, Speed${networkSpeed ? ": "+(networkSpeed / 1024).toFixed(2)+" Mbps" : ''}`,
+        title: `Very Poor Network, Speed${networkSpeed ? ": " + (networkSpeed / 1024).toFixed(2) + " Mbps" : ''}`,
         description:
           'This test needs at least 1mbps download speed.',
         icon: <AlertTriangle className='w-12 h-12 text-white fill-yellow-500' />,
@@ -143,8 +143,11 @@ export default function SystemCheckCard({ statusOverrides, networkSpeed }: Syste
   return (
     <div className='max-w-full'>
       <section className='flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-200'>
-        {Object.entries(COMPATIBILITY_CHECK_DATA).map(
-          ([checkId, checkData]) => {
+        {Object.entries(COMPATIBILITY_CHECK_DATA)
+          .filter(([checkId]) => {
+            return compatibilityStep.subSteps[checkId]?.enabled !== false;
+          })
+          .map(([checkId, checkData]) => {
             const subStepStatus = statusOverrides?.[checkId as keyof StatusOverrides]
               ?? compatibilityStep.subSteps[checkId].status;
             return (
@@ -155,8 +158,7 @@ export default function SystemCheckCard({ statusOverrides, networkSpeed }: Syste
                 {...checkData[subStepStatus]}
               />
             );
-          },
-        )}
+          })}
       </section>
     </div>
   );

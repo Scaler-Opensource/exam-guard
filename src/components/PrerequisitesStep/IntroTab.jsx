@@ -4,12 +4,12 @@ import Phone from '@/assets/images/prerequisite-phone.svg';
 import QuietPlaceWithPhone from '@/assets/images/prerequisite-quiet-place-phone.svg';
 import QuietPlace from '@/assets/images/prerequisite-quiet-place.svg';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
-import { nextSubStep, selectStep, setSubStepStatus } from '@/store/features/workflowSlice';
+import { nextSubStep, selectStep, setActiveSubStep, setSubStepStatus } from '@/store/features/workflowSlice';
 import { PREREQUISITE_STEPS } from '@/utils/constants';
 import { Card } from '@/ui/Card';
 import { Button } from '@/ui/Button';
 
-const IntroTab = () => {
+const IntroTab = ({ isCompatibilitySegmentEnabled }) => {
   const dispatch = useAppDispatch();
 
   const { enabled: isDCPEnabled } = useAppSelector((state) =>
@@ -42,7 +42,14 @@ const IntroTab = () => {
         status: 'completed',
       }),
     );
-    dispatch(nextSubStep());
+    if (isCompatibilitySegmentEnabled) {
+      dispatch(nextSubStep());
+    } else {
+      dispatch(setActiveSubStep({
+        step: 'prerequisites',
+        subStep: PREREQUISITE_STEPS.consent
+      }));
+    }
   }
 
   return (
