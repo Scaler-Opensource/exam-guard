@@ -106,6 +106,7 @@ const CompatibilityChecksTab = () => {
   }, [dispatch, enableProctoring]);
 
   useEffect(() => {
+    if(enableProctoring) return;
     if (currentCheckIndex < 0 || currentCheckIndex >= COMPATIBILITY_CHECK_SUBSTEPS.length) {
       return;
     }
@@ -167,12 +168,8 @@ const CompatibilityChecksTab = () => {
   }, [dispatch]);
 
   const handleConfirmSettings = useCallback(() => {
-    if (enableProctoring) {
-      proctor.handleCompatibilityChecks({ forceRun: true });
-    } else {
-      dispatch(nextStep());
-    }
-  }, [dispatch, enableProctoring, proctor]);
+      proctor?.handleCompatibilityChecks({ forceRun: true });
+  }, [proctor]);
 
   return (
     <div className="h-full min-h-fit w-full flex flex-col justify-between gap-20 items-start">
@@ -228,7 +225,6 @@ const CompatibilityChecksTab = () => {
               variant="primary"
               size="lg"
               onClick={handleConfirmSettings}
-              disabled={hasError}
               className="px-20 text-sm font-normal disabled:bg-[#D6DEE5] disabled:opacity-100 disabled:text-[#91A1B7]"
             >
               Confirm Settings
