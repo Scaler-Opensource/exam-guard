@@ -81,7 +81,7 @@ export default function SystemCheckCard({ statusOverrides, networkSpeed }: Syste
         icon: <CircleCheck className='w-12 h-12 text-white fill-green-600' />,
       },
       error: {
-        title: `Very Poor Network, Speed: ${networkSpeed ? (networkSpeed / 1024).toFixed(2) : '0'} mbps`,
+        title: `Very Poor Network, Speed${networkSpeed ? ": "+(networkSpeed / 1024).toFixed(2)+" Mbps" : ''}`,
         description:
           'This test needs at least 1mbps download speed.',
         icon: <AlertTriangle className='w-12 h-12 text-white fill-yellow-500' />,

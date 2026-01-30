@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 
 import { Button } from '@/ui/Button';
@@ -14,30 +14,31 @@ import { PREREQUISITE_STEPS, COMPATIBILITY_CHECK_SUBSTEPS } from '@/utils/consta
 import LightBulb from '@/assets/images/light-bulb.svg';
 import { isFullScreen } from '@/utils/fullScreenBlocker';
 import { checkBandwidthV2 } from '@/utils/network';
-import { getBrowserInfo } from '@/utils/browser';
 
-const MIN_LOADER_TIME = 700;
+const MIN_LOADER_TIME = 500;
 const BANDWIDTH_CHECK_URL = 'https://dajh2p2mfq4ra.cloudfront.net/assets/icons/ib-logo-hire-8f3406787bc4241628bb7e5bea43d56a7ab275401134c297b6631c8b81cd3996.png';
 const BANDWIDTH_TIMEOUT = 10000;
+const NON_BLOCKING_ERRORS = ['networkChecks'];
 
 const CompatibilityChecksTab = () => {
   const dispatch = useAppDispatch();
   const proctor = useAppSelector(selectProctor);
-  const { subSteps } = useAppSelector((state) => selectStep(state, 'prerequisites'));
   const { enableProctoring } = useAppSelector((state) => state.workflow);
+
+  const stepData = useAppSelector((state) => selectStep(state, 'prerequisites')) || {};
+  const subSteps = stepData.subSteps || {};
 
   const [visualStatuses, setVisualStatuses] = useState({
     systemChecks: 'locked',
     networkChecks: 'locked',
     fullScreenCheck: 'locked',
   });
+
   const [currentCheckIndex, setCurrentCheckIndex] = useState(-1);
   const [networkSpeed, setNetworkSpeed] = useState(0);
 
   const loaderStartTime = useRef(null);
   const isMounted = useRef(false);
-  const proctorTriggered = useRef(false);
-
 
   useEffect(() => {
     isMounted.current = true;
@@ -45,10 +46,7 @@ const CompatibilityChecksTab = () => {
   }, []);
 
   useEffect(() => {
-    if (!enableProctoring) return;
-    if (proctor && !proctorTriggered.current) {
-      proctorTriggered.current = true;
-
+    if (proctor) {
       setVisualStatuses({
         systemChecks: 'pending',
         networkChecks: 'locked',
@@ -56,7 +54,7 @@ const CompatibilityChecksTab = () => {
       });
       setCurrentCheckIndex(0);
       loaderStartTime.current = Date.now();
-      proctor.handleCompatibilityChecks();
+      proctor?.handleCompatibilityChecks();
     }
   }, [proctor]);
 
@@ -74,45 +72,13 @@ const CompatibilityChecksTab = () => {
       );
     };
 
-    updateFullScreenStatus();
-
-    document.addEventListener('fullscreenchange', updateFullScreenStatus);
-    document.addEventListener('webkitfullscreenchange', updateFullScreenStatus);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', updateFullScreenStatus);
-      document.removeEventListener('webkitfullscreenchange', updateFullScreenStatus);
-    };
-  }, [dispatch]);
-
-
-  useEffect(() => {
-    if (enableProctoring) return;
-
-    setVisualStatuses({
-      systemChecks: 'pending',
-      networkChecks: 'locked',
-      fullScreenCheck: 'locked',
-    });
-    setCurrentCheckIndex(0);
-    loaderStartTime.current = Date.now();
-
-    const browserInfo = getBrowserInfo();
-    dispatch(
-      setSubStepStatus({
-        step: 'prerequisites',
-        subStep: 'systemChecks',
-        status: browserInfo.isSupported ? 'completed' : 'error',
-      })
-    );
 
     const runNetworkCheck = async () => {
       try {
         const { speedKbps } = await checkBandwidthV2(BANDWIDTH_CHECK_URL, BANDWIDTH_TIMEOUT);
-
         if (!isMounted.current) return;
-
         setNetworkSpeed(speedKbps);
+
         dispatch(
           setSubStepStatus({
             step: 'prerequisites',
@@ -122,19 +88,22 @@ const CompatibilityChecksTab = () => {
         );
       } catch (err) {
         if (!isMounted.current) return;
-        dispatch(
-          setSubStepStatus({
-            step: 'prerequisites',
-            subStep: 'networkChecks',
-            status: 'error',
-          })
-        );
+        dispatch(setSubStepStatus({ step: 'prerequisites', subStep: 'networkChecks', status: 'error' }));
       }
     };
 
     runNetworkCheck();
-  }, [dispatch, enableProctoring]);
 
+    updateFullScreenStatus();
+
+    document.addEventListener('fullscreenchange', updateFullScreenStatus);
+    document.addEventListener('webkitfullscreenchange', updateFullScreenStatus);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', updateFullScreenStatus);
+      document.removeEventListener('webkitfullscreenchange', updateFullScreenStatus);
+    };
+  }, [dispatch, enableProctoring]);
 
   useEffect(() => {
     if (currentCheckIndex < 0 || currentCheckIndex >= COMPATIBILITY_CHECK_SUBSTEPS.length) {
@@ -181,51 +150,46 @@ const CompatibilityChecksTab = () => {
     });
   }, [visualStatuses]);
 
-  const isAnimating = useMemo(() => {
-    return COMPATIBILITY_CHECK_SUBSTEPS.some((key) => {
-      return visualStatuses[key] === 'pending' || visualStatuses[key] === 'locked';
-    });
-  }, [visualStatuses]);
-
   const hasError = useMemo(() => {
     return COMPATIBILITY_CHECK_SUBSTEPS.some((key) => {
+      if (NON_BLOCKING_ERRORS.includes(key)) return false;
       return subSteps?.[key]?.status === 'error';
     });
   }, [subSteps]);
 
-  const handleNext = () => {
-    dispatch(setActiveSubStep({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.consent }));
+  const handleNext = useCallback(() => {
     dispatch(setSubStepStatus({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.consent, status: 'pending' }));
-  };
+    dispatch(setActiveSubStep({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.consent }));
+  }, [dispatch]);
 
-  const handleGoBack = () => {
+  const handleGoBack = useCallback(() => {
     dispatch(setActiveSubStep({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.intro }));
-  };
+  }, [dispatch]);
 
-  const handleConfirmSettings = () => {
-    setVisualStatuses({
-      systemChecks: 'pending',
-      networkChecks: 'locked',
-      fullScreenCheck: 'locked',
-    });
-    setCurrentCheckIndex(0);
-    loaderStartTime.current = Date.now();
-    proctorTriggered.current = false;
-    proctor?.handleCompatibilityChecks({ forceRun: true });
-    proctorTriggered.current = true;
-  };
+  const handleConfirmSettings = useCallback(() => {
+    if (enableProctoring) {
+      proctor.handleCompatibilityChecks({ forceRun: true });
+    } else {
+      dispatch(nextStep());
+    }
+  }, [dispatch, enableProctoring, proctor]);
 
   return (
     <div className="h-full min-h-fit w-full flex flex-col justify-between gap-20 items-start">
       <div className="w-full">
-        <SystemCheckCard statusOverrides={visualStatuses} networkSpeed={networkSpeed} />
+        {enableProctoring ? (
+          <SystemCheckCard />
+        ) : (
+          <SystemCheckCard statusOverrides={visualStatuses} networkSpeed={networkSpeed} />
+        )}
       </div>
 
       <div className="mb-10">
         <div className="text-xs text-base-200 flex items-center mb-8 gap-2">
-          <img src={LightBulb} alt="Light Bulb" className="w-7 h-7 opacity-60" />
+          <img src={LightBulb} alt="Tip" className="w-7 h-7 opacity-60" />
           Need more help? Click to view{' '}
           <a
+            href="#"
             target="_blank"
             rel="noopener noreferrer"
             className="text-scaler-500 hover:underline cursor-pointer"
@@ -240,7 +204,7 @@ const CompatibilityChecksTab = () => {
               variant="primary"
               size="lg"
               onClick={handleNext}
-              disabled={!areAllVisuallyCompleted || isAnimating || hasError}
+              disabled={!areAllVisuallyCompleted || hasError}
               className="px-20 text-sm font-normal disabled:bg-[#D6DEE5] disabled:opacity-100 disabled:text-[#91A1B7]"
             >
               Next
@@ -264,7 +228,7 @@ const CompatibilityChecksTab = () => {
               variant="primary"
               size="lg"
               onClick={handleConfirmSettings}
-              disabled={isAnimating}
+              disabled={hasError}
               className="px-20 text-sm font-normal disabled:bg-[#D6DEE5] disabled:opacity-100 disabled:text-[#91A1B7]"
             >
               Confirm Settings
