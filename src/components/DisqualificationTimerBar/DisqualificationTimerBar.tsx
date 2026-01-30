@@ -15,7 +15,7 @@ interface DisqualificationTimerBarProps {
 }
 
 const STEP_VS_MESSAGE_MAPPING = {
-  screenShare: {
+  prerequisites: {
     message: 'Disqualified in',
     time: 45,
   },
@@ -27,7 +27,7 @@ const STEP_VS_MESSAGE_MAPPING = {
     message: 'Disqualified in',
     time: 120,
   },
-  compatibilityChecks: {
+  screenShare: {
     message: 'Disqualified in',
     time: 45,
   },

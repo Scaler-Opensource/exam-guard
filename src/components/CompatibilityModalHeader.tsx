@@ -9,11 +9,11 @@ export default function CompatibilityModalHeader() {
   return (
     <div>
       <img src={Logo} alt='Scaler Logo' className='h-6' />
-      <div className='mt-12'>
+      <div className='mt-16'>
         <p className='text-base-200 text-base'>
           Hi {assessmentInfo?.userName}!
         </p>
-        <h1 className='text-2xl font-bold mt-1'>
+        <h1 className='text-2xl font-bold mt-2'>
           {assessmentInfo?.assessmentName}
         </h1>
       </div>

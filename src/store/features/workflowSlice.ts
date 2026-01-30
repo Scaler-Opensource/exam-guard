@@ -33,29 +33,31 @@ const initialState: WorkflowState = {
   enableProctoring: false,
   modalOpen: false,
   isDisqualified: false,
-  activeStep: 'cameraShare',
+  activeStep: 'prerequisites',
   steps: {
-    cameraShare: createStep(['cameraShare'], false),
-    screenShare: createStep(['screenShare']),
+    prerequisites: createStep([
+      'introduction',
+      'systemChecks',
+      'networkChecks',
+      'fullScreenCheck',
+      'consent',
+    ], false), 
+    cameraShare: createStep(['cameraShare']),
     mobileCameraShare: createStep([
       'codeScan',
       'cameraPairing',
       'systemChecks',
     ]),
-    compatibilityChecks: createStep([
-      'systemChecks',
-      'networkChecks',
-      'fullScreenCheck',
-    ]),
+    screenShare: createStep(['screenShare']),
   },
   onWorkflowComplete: () => {},
   beepConfig: {
     enabled: false,
     sounds: {
-      screenShare: '',
+      prerequisites: '',
       cameraShare: '',
       mobileCameraShare: '',
-      compatibilityChecks: '',
+      screenShare: '',
     },
   },
 };

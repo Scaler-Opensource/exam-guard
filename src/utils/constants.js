@@ -37,6 +37,20 @@ export const PAIRING_STEPS = {
   mobileCompatibility: 'systemChecks',
 };
 
+export const PREREQUISITE_STEPS = {
+  intro: 'introduction',
+  systemChecks: 'systemChecks',
+  networkChecks: 'networkChecks', 
+  fullScreenCheck: 'fullScreenCheck',
+  consent: 'consent',
+};
+
+export const COMPATIBILITY_CHECK_SUBSTEPS = [
+  'systemChecks', 
+  'networkChecks', 
+  'fullScreenCheck'
+];
+
 export const MIN_SNAPSHOT_COUNT = 3;
 export const TOAST_AUTO_CLOSE_DURATION = 8000;
 

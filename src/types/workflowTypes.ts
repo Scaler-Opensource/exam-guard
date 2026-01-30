@@ -32,10 +32,10 @@ export interface WorkflowState {
   isDisqualified: boolean;
   activeStep: WorkflowStepKey;
   steps: {
-    screenShare: StepState;
+    prerequisites: StepState;
     cameraShare: StepState;
     mobileCameraShare: StepState;
-    compatibilityChecks: StepState;
+    screenShare: StepState;
   };
   beepConfig: beepConfigState;
   onWorkflowComplete: () => void;
