@@ -1,5 +1,5 @@
 import React, {
-  useCallback, useEffect, useMemo, useState,
+  useCallback, useEffect, useMemo, useRef,
 } from 'react';
 import { ToastContainer } from 'react-toastify';
 import { configureService as configureMobilePairingService } from '@/services/mobilePairingService';
@@ -53,7 +53,6 @@ const App = ({
     (state) => state.workflow,
   );
   const { token } = useAppSelector((state) => state.assessmentInfo);
-  const [initialised, setInitialised] = useState(false);
   const enableProctoring = enableProctoringProp || enableProctoringState;
   const { enabled: enabledScreenshotConfig } = screenshotConfig;
   const { enabled: enabledSnapshotConfig } = snapshotConfig;
@@ -65,6 +64,17 @@ const App = ({
 
   const steps = useMemo(
     () => ({
+      prerequisites: {
+        step: 'prerequisites',
+        enabled: true,
+        subSteps: {
+          introduction: true,
+          systemChecks: enabledCompatibilityCheckConfig ?? true,
+          networkChecks: enabledCompatibilityCheckConfig ?? true,
+          fullScreenCheck: (enabledCompatibilityCheckConfig ?? true) && (enabledFullScreenConfig ?? true),
+          consent: true,
+        },
+      },
       cameraShare: {
         step: 'cameraShare',
         enabled: enabledSnapshotConfig ?? true,
@@ -76,13 +86,6 @@ const App = ({
       mobileCameraShare: {
         step: 'mobileCameraShare',
         enabled: enabledMobilePairingConfig ?? true,
-      },
-      compatibilityChecks: {
-        step: 'compatibilityChecks',
-        enabled: enabledCompatibilityCheckConfig ?? true,
-        subSteps: {
-          fullScreenCheck: enabledFullScreenConfig ?? true,
-        },
       },
     }),
     [
@@ -207,6 +210,8 @@ const App = ({
     }));
   }, [dispatch, initConfig]);
 
+  const initialisedRef = useRef(false);
+
   useEffect(() => {
     const initializeProctoring = async () => {
       try {
@@ -231,9 +236,9 @@ const App = ({
         console.error('Proctoring initialization failed:', error);
       }
     };
-    if (!initialised) {
+    if (!initialisedRef.current) {
+      initialisedRef.current = true;
       initializeProctoring();
-      setInitialised(true);
 
       if (!token) {
         fetchAuthToken();
@@ -242,7 +247,7 @@ const App = ({
   }, [assessmentInfo, baseUrl, callbacks, compatibilityCheckConfig,
     config, dispatch, disqualificationConfig, enableAllAlerts,
     enableProctoring, enableProctoringState, eventsConfig,
-    handleWorkflowComplete, headerOptions, initialised,
+    handleWorkflowComplete, headerOptions,
     mobilePairingConfig, mockModeEnabled, proctor, qrCodeConfig,
     screenshotConfig, snapshotConfig, steps, fetchAuthToken, token, beepConfig]);
 

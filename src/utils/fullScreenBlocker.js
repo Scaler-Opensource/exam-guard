@@ -51,4 +51,11 @@ export function detectFullScreen({ onFullScreenEnabled, onFullScreenDisabled }) 
   document.addEventListener('webkitfullscreenchange', handleFullScreenChange);
   document.addEventListener('mozfullscreenchange', handleFullScreenChange);
   document.addEventListener('MSFullscreenChange', handleFullScreenChange);
+
+  return () => {
+    document.removeEventListener('fullscreenchange', handleFullScreenChange);
+    document.removeEventListener('webkitfullscreenchange', handleFullScreenChange);
+    document.removeEventListener('mozfullscreenchange', handleFullScreenChange);
+    document.removeEventListener('MSFullscreenChange', handleFullScreenChange);
+  };
 }
