@@ -14,6 +14,7 @@ import { PREREQUISITE_STEPS, COMPATIBILITY_CHECK_SUBSTEPS } from '@/utils/consta
 import LightBulb from '@/assets/images/light-bulb.svg';
 import { isFullScreen } from '@/utils/fullScreenBlocker';
 import { checkBandwidthV2 } from '@/utils/network';
+import { getBrowserInfo } from '@/utils/browser';
 
 const MIN_LOADER_TIME = 500;
 const BANDWIDTH_CHECK_URL = 'https://dajh2p2mfq4ra.cloudfront.net/assets/icons/ib-logo-hire-8f3406787bc4241628bb7e5bea43d56a7ab275401134c297b6631c8b81cd3996.png';
@@ -46,20 +47,28 @@ const CompatibilityChecksTab = () => {
   }, []);
 
   useEffect(() => {
-    if (proctor) {
-      setVisualStatuses({
-        systemChecks: 'pending',
-        networkChecks: 'locked',
-        fullScreenCheck: 'locked',
-      });
-      setCurrentCheckIndex(0);
-      loaderStartTime.current = Date.now();
-      proctor?.handleCompatibilityChecks();
-    }
-  }, [proctor]);
-
-  useEffect(() => {
     if (enableProctoring) return;
+
+    setVisualStatuses({
+      systemChecks: 'pending',
+      networkChecks: 'locked',
+      fullScreenCheck: 'locked',
+    });
+    setCurrentCheckIndex(0);
+    loaderStartTime.current = Date.now();
+
+    const runBrowserChecks = () => {
+      const browserInfo = getBrowserInfo();
+      const isBrowserSupported = browserInfo.isSupported;
+      dispatch(
+        setSubStepStatus({
+          step: 'prerequisites',
+          subStep: 'systemChecks',
+          status: isBrowserSupported ? 'completed' : 'error',
+        })
+      );
+    };
+
     const updateFullScreenStatus = () => {
       const isFull = isFullScreen();
       dispatch(
@@ -71,7 +80,6 @@ const CompatibilityChecksTab = () => {
         })
       );
     };
-
 
     const runNetworkCheck = async () => {
       try {
@@ -92,6 +100,8 @@ const CompatibilityChecksTab = () => {
       }
     };
 
+    runBrowserChecks();
+
     runNetworkCheck();
 
     updateFullScreenStatus();
@@ -106,7 +116,7 @@ const CompatibilityChecksTab = () => {
   }, [dispatch, enableProctoring]);
 
   useEffect(() => {
-    if(enableProctoring) return;
+    if (enableProctoring) return;
     if (currentCheckIndex < 0 || currentCheckIndex >= COMPATIBILITY_CHECK_SUBSTEPS.length) {
       return;
     }
@@ -168,7 +178,7 @@ const CompatibilityChecksTab = () => {
   }, [dispatch]);
 
   const handleConfirmSettings = useCallback(() => {
-      proctor?.handleCompatibilityChecks({ forceRun: true });
+    proctor?.handleCompatibilityChecks({ forceRun: true });
   }, [proctor]);
 
   return (
