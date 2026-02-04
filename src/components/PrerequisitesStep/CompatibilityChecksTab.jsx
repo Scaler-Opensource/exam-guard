@@ -10,7 +10,6 @@ import {
 } from '@/store/features/workflowSlice';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
-import { PREREQUISITE_STEPS, COMPATIBILITY_CHECK_SUBSTEPS } from '@/utils/constants';
 import LightBulb from '@/assets/images/light-bulb.svg';
 import { isFullScreen } from '@/utils/fullScreenBlocker';
 import { checkBandwidthV2 } from '@/utils/network';
@@ -30,7 +29,7 @@ const CompatibilityChecksTab = () => {
   const subSteps = stepData.subSteps || {};
 
   const enabledCheckSubsteps = useMemo(() => {
-     return COMPATIBILITY_CHECK_SUBSTEPS.filter(
+     return ['browserCheck', 'networkCheck', 'fullScreenCheck'].filter(
       (key) => subSteps?.[key]?.enabled !== false
     );
   }, []);
@@ -70,29 +69,29 @@ const CompatibilityChecksTab = () => {
     if (enabledCheckSubsteps.length === 0) return;
 
     const runChecks = async () => {
-      if (enabledCheckSubsteps.includes('systemChecks')) {
-        const { isSupported } = getBrowserInfo();
+      if (enabledCheckSubsteps.includes('browserCheck')) {
+        const { isSupported } = useMemo(() => getBrowserInfo(), []);
         dispatch(setSubStepStatus({
           step: 'prerequisites',
-          subStep: 'systemChecks',
+          subStep: 'browserCheck',
           status: isSupported ? 'completed' : 'error',
         }));
       }
 
-      if (enabledCheckSubsteps.includes('networkChecks')) {
+      if (enabledCheckSubsteps.includes('networkCheck')) {
         try {
           const { speedKbps } = await checkBandwidthV2(BANDWIDTH_CHECK_URL, BANDWIDTH_TIMEOUT);
           if (isMounted.current) {
             setNetworkSpeed(speedKbps);
             dispatch(setSubStepStatus({
               step: 'prerequisites',
-              subStep: 'networkChecks',
+              subStep: 'networkCheck',
               status: speedKbps >= 1024 ? 'completed' : 'error',
             }));
           }
         } catch (e) {
           if (isMounted.current) {
-            dispatch(setSubStepStatus({ step: 'prerequisites', subStep: 'networkChecks', status: 'error' }));
+            dispatch(setSubStepStatus({ step: 'prerequisites', subStep: 'networkCheck', status: 'error' }));
           }
         }
       }
@@ -149,12 +148,12 @@ const CompatibilityChecksTab = () => {
   }, [subSteps, enabledCheckSubsteps]);
 
   const handleNext = () => {
-    dispatch(setSubStepStatus({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.consent, status: 'pending' }));
-    dispatch(setActiveSubStep({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.consent }));
+    dispatch(setSubStepStatus({ step: 'prerequisites', subStep: 'consent', status: 'pending' }));
+    dispatch(setActiveSubStep({ step: 'prerequisites', subStep: 'consent' }));
   };
 
   const handleGoBack = () => {
-    dispatch(setActiveSubStep({ step: 'prerequisites', subStep: PREREQUISITE_STEPS.intro }));
+    dispatch(setActiveSubStep({ step: 'prerequisites', subStep: 'introduction' }));
   };
 
   return (

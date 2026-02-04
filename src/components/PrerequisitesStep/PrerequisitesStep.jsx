@@ -2,12 +2,11 @@ import React, { useEffect, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import { selectStep, setSubStepStatus } from '@/store/features/workflowSlice';
 import { evaluateParentStepStatus } from '@/utils/evaluateParentStepStatus';
-import { PREREQUISITE_STEPS, COMPATIBILITY_CHECK_SUBSTEPS } from '@/utils/constants';
 import StepHeader from '@/ui/StepHeader';
 
-import IntroTab from './IntroTab';
-import CompatibilityChecksTab from './CompatibilityChecksTab';
-import ConsentTab from './ConsentTab';
+import IntroTab from '@/components/PrerequisitesStep/IntroTab';
+import CompatibilityChecksTab from '@/components/PrerequisitesStep/CompatibilityChecksTab';
+import ConsentTab from '@/components/PrerequisitesStep/ConsentTab';
 
 const MemoizedIntroTab = React.memo(IntroTab);
 const MemoizedCompatibilityChecksTab = React.memo(CompatibilityChecksTab);
@@ -26,8 +25,8 @@ const PrerequisitesStep = () => {
 
   const isCompatibilitySegmentEnabled = useMemo(() => {
     return (
-      subSteps?.systemChecks?.enabled ||
-      subSteps?.networkChecks?.enabled ||
+      subSteps?.browserCheck?.enabled ||
+      subSteps?.networkCheck?.enabled ||
       subSteps?.fullScreenCheck?.enabled
     );
   }, [subSteps]);
@@ -36,13 +35,13 @@ const PrerequisitesStep = () => {
     let section = 'intro';
     let segment = 1;
 
-    if (activeSubStep === PREREQUISITE_STEPS.intro) {
+    if (activeSubStep === 'introduction') {
       section = 'intro';
       segment = 1;
-    } else if (isCompatibilitySegmentEnabled && COMPATIBILITY_CHECK_SUBSTEPS.includes(activeSubStep)) {
+    } else if (isCompatibilitySegmentEnabled && ['browserCheck', 'networkCheck', 'fullScreenCheck'].includes(activeSubStep)) {
       section = 'compatibility';
       segment = 2;
-    } else if (activeSubStep === PREREQUISITE_STEPS.consent) {
+    } else if (activeSubStep === 'consent') {
       section = 'consent';
       segment = isCompatibilitySegmentEnabled ? 3 : 2;
     }
@@ -51,11 +50,11 @@ const PrerequisitesStep = () => {
   }, [activeSubStep, isCompatibilitySegmentEnabled]);
 
   useEffect(() => {
-    if (subSteps?.[PREREQUISITE_STEPS.intro]?.status === 'locked') {
+    if (subSteps?.['introduction']?.status === 'locked') {
       dispatch(
         setSubStepStatus({
           step: 'prerequisites',
-          subStep: PREREQUISITE_STEPS.intro,
+          subStep: 'introduction',
           status: 'pending',
         }),
       );

@@ -5,6 +5,7 @@ import {
   Smartphone,
   ClipboardList,
   CircleCheck,
+  Webcam,
 } from 'lucide-react';
 
 import { Modal } from '@/ui/Modal';
@@ -27,8 +28,8 @@ const ALL_STEPS: Record<string, Step> = {
     component: <PrerequisitesStep />,
   },
   cameraShare: {
-    icon: Camera,
-    title: 'Desktop Camera Permissions',
+    icon: Webcam,
+    title: 'Desktop Camera Setup',
     component: <DesktopCameraStep />,
   },
   mobileCameraShare: {

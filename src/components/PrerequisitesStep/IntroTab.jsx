@@ -5,7 +5,6 @@ import QuietPlaceWithPhone from '@/assets/images/prerequisite-quiet-place-phone.
 import QuietPlace from '@/assets/images/prerequisite-quiet-place.svg';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import { nextSubStep, selectStep, setActiveSubStep, setSubStepStatus } from '@/store/features/workflowSlice';
-import { PREREQUISITE_STEPS } from '@/utils/constants';
 import { Card } from '@/ui/Card';
 import { Button } from '@/ui/Button';
 
@@ -38,7 +37,7 @@ const IntroTab = ({ isCompatibilitySegmentEnabled }) => {
     dispatch(
       setSubStepStatus({
         step: 'prerequisites',
-        subStep: PREREQUISITE_STEPS.intro,
+        subStep: 'introduction',
         status: 'completed',
       }),
     );
@@ -47,7 +46,7 @@ const IntroTab = ({ isCompatibilitySegmentEnabled }) => {
     } else {
       dispatch(setActiveSubStep({
         step: 'prerequisites',
-        subStep: PREREQUISITE_STEPS.consent
+        subStep: 'consent'
       }));
     }
   }

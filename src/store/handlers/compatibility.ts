@@ -15,8 +15,8 @@ const CHECK_TO_STEP_MAP: Record<string, { step: string; subStep: string }> = {
   mobileSetup: { step: 'mobileCameraShare', subStep: 'codeScan' },
   mobileSnapshot: { step: 'mobileCameraShare', subStep: 'cameraPairing' },
   mobileBattery: { step: 'mobileCameraShare', subStep: 'systemChecks' },
-  browser: { step: 'prerequisites', subStep: 'systemChecks' },
-  networkSpeed: { step: 'prerequisites', subStep: 'networkChecks' },
+  browser: { step: 'prerequisites', subStep: 'browserCheck' },
+  networkSpeed: { step: 'prerequisites', subStep: 'networkCheck' },
   fullscreen: { step: 'prerequisites', subStep: 'fullScreenCheck' },
 };
 

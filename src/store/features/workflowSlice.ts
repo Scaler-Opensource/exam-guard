@@ -35,14 +35,8 @@ const initialState: WorkflowState = {
   isDisqualified: false,
   activeStep: 'prerequisites',
   steps: {
-    prerequisites: createStep([
-      'introduction',
-      'systemChecks',
-      'networkChecks',
-      'fullScreenCheck',
-      'consent',
-    ], false), 
-    cameraShare: createStep(['cameraShare']),
+    prerequisites: createStep(['introduction', 'browserCheck', 'networkCheck', 'fullScreenCheck', 'consent'], false),
+    cameraShare: createStep(['introduction', 'cameraShare', 'qualityCheck', 'visibilityCheck']),
     mobileCameraShare: createStep([
       'codeScan',
       'cameraPairing',
@@ -50,7 +44,7 @@ const initialState: WorkflowState = {
     ]),
     screenShare: createStep(['screenShare']),
   },
-  onWorkflowComplete: () => {},
+  onWorkflowComplete: () => { },
   beepConfig: {
     enabled: false,
     sounds: {
@@ -83,8 +77,8 @@ const workflowSlice = createSlice({
     nextStep(state) {
       const steps = Object.keys(state.steps) as WorkflowStepKey[];
       const currentIndex = steps.indexOf(state.activeStep);
-      
-      const nextEnabledStepIndex = steps.findIndex((step, index) => 
+
+      const nextEnabledStepIndex = steps.findIndex((step, index) =>
         index > currentIndex && state.steps[step].enabled
       );
 
@@ -108,15 +102,15 @@ const workflowSlice = createSlice({
       if (!currentSubSteps || Object.keys(currentSubSteps).length <= 0) {
         return;
       }
-    
+
       const subSteps = Object.keys(currentSubSteps);
       const currentSubStepIndex = subSteps.indexOf(currentStep.activeSubStep);
-    
+
       if (currentSubStepIndex < subSteps.length - 1) {
         // Update the status of the current active sub-step to "completed"
         const currentSubStepKey = subSteps[currentSubStepIndex];
         currentSubSteps[currentSubStepKey].status = 'completed';
-    
+
         // Move to the next sub-step
         const nextSubStepKey = subSteps[currentSubStepIndex + 1];
         currentSubSteps[nextSubStepKey].status = 'pending';
@@ -175,7 +169,7 @@ const workflowSlice = createSlice({
       if (state.enableProctoring) {
         const allCompleted = Object.entries(state.steps).every(([_, stepState]) => {
           if (!stepState.enabled) return true;
-          
+
           return Object.values(stepState.subSteps).every(
             subStep => subStep.enabled && subStep.status === 'completed'
           );
@@ -217,7 +211,7 @@ const workflowSlice = createSlice({
     ) {
       Object.values(action.payload).forEach(({ step, enabled, subSteps }) => {
         state.steps[step].enabled = enabled;
-        
+
         if (subSteps) {
           Object.entries(subSteps).forEach(([subStep, isEnabled]) => {
             state.steps[step].subSteps[subStep].enabled = isEnabled;

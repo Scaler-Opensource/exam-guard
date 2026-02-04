@@ -5,7 +5,6 @@ import Certificate from '@/assets/images/prerequisite-consent.svg';
 import { Checkbox } from '@/ui/Checkbox';
 import { nextStep, selectStep, setActiveSubStep, setStepAcknowledged, setSubStepStatus } from '@/store/features/workflowSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
-import { PREREQUISITE_STEPS } from '@/utils/constants';
 
 const ConsentTab = ({ isCompatibilitySegmentEnabled }) => {
 
@@ -28,7 +27,7 @@ const ConsentTab = ({ isCompatibilitySegmentEnabled }) => {
     dispatch(
       setSubStepStatus({
         step: 'prerequisites',
-        subStep: PREREQUISITE_STEPS.consent,
+        subStep: 'consent',
         status: 'completed',
       }),
     );
@@ -40,14 +39,14 @@ const ConsentTab = ({ isCompatibilitySegmentEnabled }) => {
       dispatch(
         setActiveSubStep({
           step: 'prerequisites',
-          subStep: PREREQUISITE_STEPS.systemChecks,
+          subStep: 'browserCheck',
         }),
       );
     } else {
       dispatch(
         setActiveSubStep({
           step: 'prerequisites',
-          subStep: PREREQUISITE_STEPS.intro,
+          subStep: 'introduction',
         }),
       );
     }

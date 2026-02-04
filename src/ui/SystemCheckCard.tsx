@@ -8,8 +8,8 @@ import { useAppSelector } from '@/hooks/reduxhooks';
 import CompatibilityStep from './CompatibilityStep';
 
 interface StatusOverrides {
-  systemChecks?: 'locked' | 'pending' | 'completed' | 'error';
-  networkChecks?: 'locked' | 'pending' | 'completed' | 'error';
+  browserCheck?: 'locked' | 'pending' | 'completed' | 'error';
+  networkCheck?: 'locked' | 'pending' | 'completed' | 'error';
   fullScreenCheck?: 'locked' | 'pending' | 'completed' | 'error';
 }
 
@@ -25,7 +25,7 @@ export default function SystemCheckCard({ statusOverrides, networkSpeed }: Syste
   const proctor = useAppSelector(selectProctor);
 
   const COMPATIBILITY_CHECK_DATA = {
-    systemChecks: {
+    browserCheck: {
       locked: {
         title: 'Browser compatibility',
         description:
@@ -60,7 +60,7 @@ export default function SystemCheckCard({ statusOverrides, networkSpeed }: Syste
         extraUi: null,
       },
     },
-    networkChecks: {
+    networkCheck: {
       locked: {
         title: 'Network speed test',
         description:
