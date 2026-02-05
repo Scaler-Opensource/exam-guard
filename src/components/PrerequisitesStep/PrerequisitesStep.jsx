@@ -4,25 +4,32 @@ import { selectStep, setSubStepStatus } from '@/store/features/workflowSlice';
 import { evaluateParentStepStatus } from '@/utils/evaluateParentStepStatus';
 import StepHeader from '@/ui/StepHeader';
 
-
-import IntroTab from '@/components/DesktopCameraStep/IntroTab';
-import CameraShareTab from '@/components/DesktopCameraStep/CameraShareTab';
-import ImageChecksTab from '@/components/DesktopCameraStep/ImageChecksTab';
+import IntroTab from '@/components/PrerequisitesStep/IntroTab';
+import CompatibilityChecksTab from '@/components/PrerequisitesStep/CompatibilityChecksTab';
+import ConsentTab from '@/components/PrerequisitesStep/ConsentTab';
 
 const MemoizedIntroTab = React.memo(IntroTab);
-const MemoizedCameraShareTab = React.memo(CameraShareTab);
-const MemoizedImageChecksTab = React.memo(ImageChecksTab);
+const MemoizedCompatibilityChecksTab = React.memo(CompatibilityChecksTab);
+const MemoizedConsentTab = React.memo(ConsentTab);
 
 const PrerequisitesStep = () => {
   const dispatch = useAppDispatch();
   const { subSteps, activeSubStep } = useAppSelector((state) =>
-    selectStep(state, 'cameraShare'),
+    selectStep(state, 'prerequisites'),
   );
 
   const status = useMemo(
     () => evaluateParentStepStatus(Object.values(subSteps || {})),
     [subSteps],
   );
+
+  const isCompatibilitySegmentEnabled = useMemo(() => {
+    return (
+      subSteps?.browserCheck?.enabled ||
+      subSteps?.networkCheck?.enabled ||
+      subSteps?.fullScreenCheck?.enabled
+    );
+  }, [subSteps]);
 
   const { activeSection, currentSegment } = useMemo(() => {
     let section = 'intro';
@@ -31,16 +38,16 @@ const PrerequisitesStep = () => {
     if (activeSubStep === 'introduction') {
       section = 'intro';
       segment = 1;
-    } else if (activeSubStep === 'cameraShare') {
-      section = 'cameraShare';
+    } else if (isCompatibilitySegmentEnabled && ['browserCheck', 'networkCheck', 'fullScreenCheck'].includes(activeSubStep)) {
+      section = 'compatibility';
       segment = 2;
-    } else if (['qualityCheck', 'visibilityCheck'].includes(activeSubStep)) {
-      section = 'imageChecks';
-      segment =  3;
+    } else if (activeSubStep === 'consent') {
+      section = 'consent';
+      segment = isCompatibilitySegmentEnabled ? 3 : 2;
     }
 
     return { activeSection: section, currentSegment: segment };
-  }, [activeSubStep]);
+  }, [activeSubStep, isCompatibilitySegmentEnabled]);
 
   useEffect(() => {
     if (subSteps?.['introduction']?.status === 'locked') {
@@ -57,25 +64,25 @@ const PrerequisitesStep = () => {
   return (
     <div className="w-full h-full">
       <StepHeader
-        stepNumber="2"
-        title="Desktop Camera Setup"
+        stepNumber="1"
+        title="Prerequisites"
         status={status}
         showIcon={false}
         progressBar={{
-          segments: 3,
+          segments: isCompatibilitySegmentEnabled ? 3 : 2,
           currentSegment: currentSegment,
         }}
       />
 
       <div className="flex-1 pt-20 h-full">
         {activeSection === 'intro' && (
-          <MemoizedIntroTab />
+          <MemoizedIntroTab isCompatibilitySegmentEnabled={isCompatibilitySegmentEnabled} />
         )}
-        {activeSection === 'cameraShare' && (
-          <MemoizedCameraShareTab />
+        {activeSection === 'compatibility' && (
+          <MemoizedCompatibilityChecksTab />
         )}
-        {activeSection === 'imageChecks' && (
-          <MemoizedImageChecksTab />
+        {activeSection === 'consent' && (
+          <MemoizedConsentTab isCompatibilitySegmentEnabled={isCompatibilitySegmentEnabled} />
         )}
       </div>
     </div>

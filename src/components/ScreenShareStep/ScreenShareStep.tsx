@@ -56,7 +56,7 @@ const ScreenShareStep = () => {
   return (
     <>
       <StepHeader
-        stepNumber='1'
+        stepNumber='4'
         title='Share your Entire Screen'
         status={status}
       />

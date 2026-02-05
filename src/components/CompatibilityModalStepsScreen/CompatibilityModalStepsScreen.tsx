@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { act } from 'react';
 import { Check, AlertTriangle } from 'lucide-react';
 
 import { evaluateParentStepStatus } from '@/utils/evaluateParentStepStatus';
@@ -32,20 +32,15 @@ const StepItem: React.FC<StepItemProps> = ({
   >
     <div className='flex flex-col items-center'>
       <div
-        className={`rounded-full p-5 ${
-          status === 'completed'
+        className={`rounded-full p-5 ${status === 'completed'
             ? 'bg-scaler-900 text-white'
-            : status === 'error'
-              ? 'bg-red-500 text-white'
-              : active
-                ? 'bg-scaler-500 text-white'
-                : 'bg-scaler-100 text-blue-400'
-        }`}
+            : active
+              ? 'bg-scaler-500 text-white'
+              : 'bg-scaler-100 text-blue-400'
+          }`}
       >
         {status === 'completed' ? (
           <Check className='w-8 h-8' />
-        ) : status === 'error' ? (
-          <AlertTriangle className='w-8 h-8' />
         ) : (
           <Icon className='w-8 h-8' />
         )}
@@ -57,13 +52,10 @@ const StepItem: React.FC<StepItemProps> = ({
         STEP {step}
       </div>
       <div
-        className={`text-base ${
-          status === 'error'
-            ? 'font-bold text-red-500'
-            : active
-              ? 'font-bold text-scaler-500'
-              : 'font-medium text-base-700'
-        }`}
+        className={`text-base ${ active
+            ? 'font-medium text-base-700'
+            : 'font-normal text-gray-500'
+          }`}
       >
         {title}
       </div>

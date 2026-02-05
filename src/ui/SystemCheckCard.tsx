@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, CircleCheck, Loader2 } from 'lucide-react';
+import { AlertTriangle, CircleCheck, CircleX, Loader2 } from 'lucide-react';
 
 import { Button } from '@/ui/Button';
 import { selectStep } from '@/store/features/workflowSlice';
@@ -7,70 +7,85 @@ import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { useAppSelector } from '@/hooks/reduxhooks';
 import CompatibilityStep from './CompatibilityStep';
 
-export default function SystemCheckCard() {
+interface StatusOverrides {
+  browserCheck?: 'locked' | 'pending' | 'completed' | 'error';
+  networkCheck?: 'locked' | 'pending' | 'completed' | 'error';
+  fullScreenCheck?: 'locked' | 'pending' | 'completed' | 'error';
+}
+
+interface SystemCheckCardProps {
+  statusOverrides?: StatusOverrides;
+  networkSpeed?: number;
+}
+
+export default function SystemCheckCard({ statusOverrides, networkSpeed }: SystemCheckCardProps) {
   const compatibilityStep = useAppSelector((state) =>
-    selectStep(state, 'compatibilityChecks'),
+    selectStep(state, 'prerequisites'),
   );
   const proctor = useAppSelector(selectProctor);
 
   const COMPATIBILITY_CHECK_DATA = {
-    systemChecks: {
+    browserCheck: {
       locked: {
-        title: 'System Compatibility',
+        title: 'Browser compatibility',
         description:
           "We'll check your browser settings to ensure the test runs smoothly",
-        icon: <Loader2 className='w-12 h-12 text-scaler-500 animate-spin' />,
+        icon: <div className='w-12 h-12 border-[#D6DEE5] border rounded-full' />,
       },
       pending: {
-        title: 'System Compatibility',
+        title: 'Browser compatibility',
         description:
           "We'll check your browser settings to ensure the test runs smoothly",
         icon: <Loader2 className='w-12 h-12 text-scaler-500 animate-spin' />,
+        checkBg: 'bg-blue-50',
       },
       completed: {
-        title: 'System Compatibility',
+        title: 'Browser is compatible',
         description:
           "We'll check your browser settings to ensure the test runs smoothly",
         icon: <CircleCheck className='w-12 h-12 text-white fill-green-600' />,
       },
       error: {
-        title: 'System Compatibility',
+        title: 'Browser is not recommended',
         description:
-          "We'll check your browser settings to ensure the test runs smoothly",
-        icon: <AlertTriangle className='w-12 h-12 text-red-500' />,
+          "Supported browsers: Latest three versions of Chrome (preferred), Microsoft edge, Firefox, Opera and Safari browser",
+        icon: <AlertTriangle className='w-12 h-12 text-white fill-yellow-500' />,
+        checkBg: 'bg-yellow-50',
         error: (
           <span className='text-red-500'>
             <strong>Error</strong> - Supported browsers: Latest three versions
-            of Chrome (preferred), Microsoft edge, Firefox and Safari browser
+            of Chrome (preferred), Microsoft edge, Firefox, Opera and Safari browser
           </span>
         ),
         extraUi: null,
       },
     },
-    networkChecks: {
+    networkCheck: {
       locked: {
-        title: 'Network Checks : Compatibility',
+        title: 'Network speed test',
         description:
           'Checking your network connection to ensure it stays stable during the test.',
-        icon: <Loader2 className='w-12 h-12 text-scaler-500 animate-spin' />,
+        icon: <div className='w-12 h-12 border-[#D6DEE5] border rounded-full' />,
       },
       pending: {
-        title: 'Network Checks : Compatibility',
+        title: 'Network speed test',
         description:
           'Checking your network connection to ensure it stays stable during the test.',
         icon: <Loader2 className='w-12 h-12 text-scaler-500 animate-spin' />,
+        checkBg: 'bg-blue-50',
       },
       completed: {
-        title: 'Network Checks : Compatibility',
+        title: 'Network looks good',
         description:
           'Checking your network connection to ensure it stays stable during the test.',
         icon: <CircleCheck className='w-12 h-12 text-white fill-green-600' />,
       },
       error: {
-        title: 'Network Checks : Compatibility',
+        title: `Very Poor Network, Speed${networkSpeed ? ": " + (networkSpeed / 1024).toFixed(2) + " Mbps" : ''}`,
         description:
-          'Checking your network connection to ensure it stays stable during the test.',
-        icon: <AlertTriangle className='w-12 h-12 text-red-500' />,
+          'This test needs at least 1mbps download speed.',
+        icon: <AlertTriangle className='w-12 h-12 text-white fill-yellow-500' />,
+        checkBg: 'bg-yellow-50',
         error: (
           <span className='text-red-500'>
             Error - Network speed:{' '}
@@ -82,24 +97,26 @@ export default function SystemCheckCard() {
     },
     fullScreenCheck: {
       locked: {
-        title: 'Switch to full screen mode',
+        title: 'Full screen compliance',
         description: 'Ensure you stay in full-screen mode at all times',
-        icon: <Loader2 className='w-12 h-12 text-scaler-500 animate-spin' />,
+        icon: <div className='w-12 h-12 border-[#D6DEE5] border rounded-full' />,
       },
       pending: {
-        title: 'Switch to full screen mode',
+        title: 'Full screen compliance',
         description: 'Ensure you stay in full-screen mode at all times',
         icon: <Loader2 className='w-12 h-12 text-scaler-500 animate-spin' />,
+        checkBg: 'bg-blue-50',
       },
       completed: {
-        title: 'Switch to full screen mode',
+        title: 'In full screen mode',
         description: 'Ensure you stay in full-screen mode at all times',
         icon: <CircleCheck className='w-12 h-12 text-white fill-green-600' />,
       },
       error: {
         title: 'Switch to full screen mode',
         description: 'Ensure you stay in full-screen mode at all times',
-        icon: <AlertTriangle className='w-12 h-12 text-red-500' />,
+        icon: <CircleX className='w-12 h-12 fill-red-500 text-red-50' />,
+        checkBg: 'bg-red-50',
         error: (
           <span className='text-red-500'>
             Error - Switch to full screen mode
@@ -126,9 +143,13 @@ export default function SystemCheckCard() {
   return (
     <div className='max-w-full'>
       <section className='flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden divide-y divide-gray-200'>
-        {Object.entries(COMPATIBILITY_CHECK_DATA).map(
-          ([checkId, checkData]) => {
-            const subStepStatus = compatibilityStep.subSteps[checkId].status;
+        {Object.entries(COMPATIBILITY_CHECK_DATA)
+          .filter(([checkId]) => {
+            return compatibilityStep.subSteps[checkId]?.enabled !== false;
+          })
+          .map(([checkId, checkData]) => {
+            const subStepStatus = statusOverrides?.[checkId as keyof StatusOverrides]
+              ?? compatibilityStep.subSteps[checkId].status;
             return (
               <CompatibilityStep
                 key={checkId}
@@ -137,8 +158,7 @@ export default function SystemCheckCard() {
                 {...checkData[subStepStatus]}
               />
             );
-          },
-        )}
+          })}
       </section>
     </div>
   );

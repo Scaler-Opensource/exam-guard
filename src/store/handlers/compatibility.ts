@@ -15,9 +15,9 @@ const CHECK_TO_STEP_MAP: Record<string, { step: string; subStep: string }> = {
   mobileSetup: { step: 'mobileCameraShare', subStep: 'codeScan' },
   mobileSnapshot: { step: 'mobileCameraShare', subStep: 'cameraPairing' },
   mobileBattery: { step: 'mobileCameraShare', subStep: 'systemChecks' },
-  browser: { step: 'compatibilityChecks', subStep: 'systemChecks' },
-  networkSpeed: { step: 'compatibilityChecks', subStep: 'networkChecks' },
-  fullscreen: { step: 'compatibilityChecks', subStep: 'fullScreenCheck' },
+  browser: { step: 'prerequisites', subStep: 'browserCheck' },
+  networkSpeed: { step: 'prerequisites', subStep: 'networkCheck' },
+  fullscreen: { step: 'prerequisites', subStep: 'fullScreenCheck' },
 };
 
 export default class CompatibilityHandlers {
@@ -42,7 +42,7 @@ export default class CompatibilityHandlers {
   handleFullScreenEnabled = () => {
     this.dispatch(
       setSubStepStatus({
-        step: 'compatibilityChecks',
+        step: 'prerequisites',
         subStep: 'fullScreenCheck',
         status: 'completed',
         clearError: true,
@@ -73,7 +73,7 @@ export default class CompatibilityHandlers {
       this.dispatch(
         setSubStepStatus({
           step: mapping.step as
-            | 'compatibilityChecks'
+            | 'prerequisites'
             | 'cameraShare'
             | 'screenShare',
           subStep: mapping.subStep,
@@ -106,7 +106,7 @@ export default class CompatibilityHandlers {
         this.dispatch(
           setSubStepStatus({
             step: mapping.step as
-              | 'compatibilityChecks'
+              | 'prerequisites'
               | 'cameraShare'
               | 'screenShare',
             subStep: mapping.subStep,
@@ -119,7 +119,7 @@ export default class CompatibilityHandlers {
           this.dispatch(
             setActiveStep(
               mapping.step as
-                | 'compatibilityChecks'
+                | 'prerequisites'
                 | 'cameraShare'
                 | 'screenShare',
             ),
@@ -135,7 +135,7 @@ export default class CompatibilityHandlers {
           this.dispatch(
             setActiveSubStep({
               step: mapping.step as
-                | 'compatibilityChecks'
+                | 'prerequisites'
                 | 'cameraShare'
                 | 'screenShare',
               subStep: mapping.subStep,

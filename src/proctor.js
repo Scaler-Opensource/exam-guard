@@ -398,10 +398,16 @@ export default class Proctor {
 
     this.networkWorker = null;
     this.lastNetworkAlertTimestamp = 0;
+    this.cleanupFullscreenDetection = null;
   }
 
   async initializeProctoring() {
+    if (this.proctoringInitialised) {
+      console.warn('Proctor already initialized, skipping...');
+      return;
+    }
     this.proctoringInitialised = true;
+    this.initialCompatibilityCheckDone = false;
 
     // TODO: Enable network check once confident
     // Start periodic network checks if needed for screenshots or snapshots
@@ -414,7 +420,7 @@ export default class Proctor {
     }
 
     if (this.config.fullScreen.enabled) {
-      detectFullScreen({
+      this.cleanupFullscreenDetection = detectFullScreen({
         onFullScreenDisabled: this.handleFullScreenDisabled.bind(this),
         onFullScreenEnabled: this.handleFullScreenEnabled.bind(this),
       });
@@ -573,9 +579,10 @@ export default class Proctor {
   startCompatibilityChecks() {
     if (!this.compatibilityCheckConfig.enable) return;
 
-    this.compatibilityCheckInterval = setTimeout(() => {
-      this.runAdaptiveCompatibilityChecks();
-    }, this.compatibilityCheckConfig.frequency);
+    // this.compatibilityCheckInterval = setTimeout(() => {
+    this.runAdaptiveCompatibilityChecks();
+    this.initialCompatibilityCheckDone = true;
+    // }, this.compatibilityCheckConfig.frequency);
   }
 
   runAdaptiveCompatibilityChecks() {
@@ -928,7 +935,7 @@ export default class Proctor {
     }
 
     if (!this.initialFullScreen) {
-      requestFullScreen();
+      // requestFullScreen(); // can not request without user interaction
       this.initialFullScreen = true;
     } else {
       this.handleViolation(VIOLATIONS.fullScreen);
@@ -938,6 +945,12 @@ export default class Proctor {
 
   handleFullScreenEnabled() {
     this.callbacks.onFullScreenEnabled();
+    if (this.initialCompatibilityCheckDone) {
+      this.runCompatibilityChecks(
+        this.handleCompatibilitySuccess.bind(this),
+        this.handleCompatibilityFailure.bind(this),
+      );
+    }
   }
 
   handleCompatibilityChecks({ forceRun = false } = {}) {
@@ -1059,6 +1072,10 @@ export default class Proctor {
     }
     this.compatibilityWorker.postMessage({ type: 'CLEANUP' });
     this.compatibilityWorker.terminate();
+
+    if (this.cleanupFullscreenDetection) {
+      this.cleanupFullscreenDetection();
+    }
   }
 
   handleCleanup() {

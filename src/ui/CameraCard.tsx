@@ -4,6 +4,7 @@ import { useAppSelector, useAppDispatch } from '@/hooks/reduxhooks';
 import {
   selectSubStep,
   setSubStepError,
+  setSubStepStatus,
 } from '@/store/features/workflowSlice';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 
@@ -13,7 +14,7 @@ const LOW_QUALITY_CONSTRAINTS = {
     width: { ideal: 160 },     // Using ideal instead of max
     height: { ideal: 120 },    // Using ideal instead of max
     frameRate: {
-      ideal: 4    // Still keep ideal for browsers that respect it
+      ideal: 10    // Still keep ideal for browsers that respect it
     },  
     facingMode: 'user',
     advanced: [
@@ -157,6 +158,14 @@ export default function CameraSelector() {
         videoElement.srcObject = stream;
       }
 
+      dispatch(
+        setSubStepStatus({
+          step: 'cameraShare',
+          subStep: 'cameraShare',
+          status: 'completed',
+        })
+      );
+
     } catch (error: any) {
       console.error('Camera initialization error:', error);
       let errorMessage = 'Camera permission denied';
@@ -218,7 +227,7 @@ export default function CameraSelector() {
   }, [handleCameraChange]);
 
   return (
-    <div className='flex flex-col gap-4 items-center w-full max-w-5xl mx-auto'>
+    <div className=' border-none w-[80%] flex flex-col items-center justify-between gap-10 shadow-[0_0_40px_10px_rgb(0,0,0,0.05)]'>
       <div className='overflow-hidden shadow-lg bg-white w-full pb-6 space-y-6 rounded-2xl'>
         <div className='aspect-video bg-gray-100 rounded-lg flex items-center justify-center'>
           {cameraState.status === 'error' && (

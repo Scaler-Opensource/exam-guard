@@ -3,8 +3,9 @@ import {
   Monitor,
   Camera,
   Smartphone,
-  Settings,
+  ClipboardList,
   CircleCheck,
+  Webcam,
 } from 'lucide-react';
 
 import { Modal } from '@/ui/Modal';
@@ -18,27 +19,28 @@ import DisqualificationTimerBar from '@/components/DisqualificationTimerBar';
 import MobileCameraStep from '@/components/MobileCameraStep';
 import ScreenShareStep from '@/components/ScreenShareStep';
 import SystemChecksStep from '@/components/SystemChecksStep';
+import PrerequisitesStep from '@/components/PrerequisitesStep';
 
 const ALL_STEPS: Record<string, Step> = {
-  cameraShare: {
-    icon: Camera,
-    title: 'Desktop Camera Permissions',
-    component: <DesktopCameraStep />,
+  prerequisites: {
+    icon: ClipboardList,
+    title: 'Prerequisites',
+    component: <PrerequisitesStep />,
   },
-  screenShare: {
-    icon: Monitor,
-    title: 'Screen Share Permissions',
-    component: <ScreenShareStep />,
+  cameraShare: {
+    icon: Webcam,
+    title: 'Desktop Camera Setup',
+    component: <DesktopCameraStep />,
   },
   mobileCameraShare: {
     icon: Smartphone,
     title: 'Mobile Camera Pairing',
     component: <MobileCameraStep />,
   },
-  compatibilityChecks: {
-    icon: Settings,
-    title: 'System Compatibility Checks',
-    component: <SystemChecksStep />,
+  screenShare: {
+    icon: Monitor,
+    title: 'Screen Share Permissions',
+    component: <ScreenShareStep />,
   },
 };
 
@@ -134,15 +136,17 @@ export default function CompatibilityModal() {
             />
           )}
           <div className='grow flex flex-row items-center overflow-hidden'>
-            <div className='flex flex-col justify-center bg-base-100 p-20 pt-24 m-w-96 w-1/3 h-[calc(100vh-22px)] overflow-y-auto'>
+            <div className='flex flex-col justify-center bg-base-100 p-20 pt-5 m-w-96 w-1/3 h-full overflow-y-auto'>
               <div className='h-[80%]'>
                 <CompatibilityModalHeader />
                 <CompatibilityModalStepsScreen step_data={enabledSteps} />
               </div>
             </div>
 
-            <div className='flex flex-col justify-center p-20 pt-20 flex-1 overflow-y-auto h-full'>
-              {enabledSteps[activeStep]?.component}
+            <div className='flex flex-col justify-center p-20 pt-5 flex-1 overflow-y-auto h-full max-w-[120rem] mx-auto'>
+              <div className='h-[80%] w-full'>
+                {enabledSteps[activeStep]?.component}
+              </div>
             </div>
           </div>
         </>
