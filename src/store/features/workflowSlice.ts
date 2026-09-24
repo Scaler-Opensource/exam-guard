@@ -7,6 +7,8 @@ import {
   WorkflowStepKey,
   StepEnableConfig,
 } from '@/types/workflowTypes';
+import { fetchToken } from '@/store/features/assessmentInfoSlice';
+import { isIdentityStepWanted } from '@/utils/identityVerification';
 
 const createSubStep = (): SubStepState => ({
   status: 'locked',
@@ -47,6 +49,7 @@ const initialState: WorkflowState = {
       'networkChecks',
       'fullScreenCheck',
     ]),
+    identityVerification: createStep(['identityCapture']),
   },
   onWorkflowComplete: () => {},
   beepConfig: {
@@ -56,8 +59,32 @@ const initialState: WorkflowState = {
       cameraShare: '',
       mobileCameraShare: '',
       compatibilityChecks: '',
+      identityVerification: '',
     },
   },
+};
+
+// Moves to the next enabled step, or closes the modal and completes the workflow after the last.
+const advanceToNextStep = (state: WorkflowState) => {
+  const steps = Object.keys(state.steps) as WorkflowStepKey[];
+  const currentIndex = steps.indexOf(state.activeStep);
+
+  const nextEnabledStepIndex = steps.findIndex((step, index) =>
+    index > currentIndex && state.steps[step].enabled
+  );
+
+  if (nextEnabledStepIndex !== -1) {
+    const nextStepKey = steps[nextEnabledStepIndex];
+    if (state.steps[nextStepKey].locked) {
+      state.steps[nextStepKey].locked = false;
+    }
+    state.activeStep = nextStepKey;
+  } else {
+    state.modalOpen = false;
+    if (state.onWorkflowComplete) {
+      state.onWorkflowComplete();
+    }
+  }
 };
 
 const workflowSlice = createSlice({
@@ -79,25 +106,7 @@ const workflowSlice = createSlice({
     },
 
     nextStep(state) {
-      const steps = Object.keys(state.steps) as WorkflowStepKey[];
-      const currentIndex = steps.indexOf(state.activeStep);
-      
-      const nextEnabledStepIndex = steps.findIndex((step, index) => 
-        index > currentIndex && state.steps[step].enabled
-      );
-
-      if (nextEnabledStepIndex !== -1) {
-        const nextStepKey = steps[nextEnabledStepIndex];
-        if (state.steps[nextStepKey].locked) {
-          state.steps[nextStepKey].locked = false;
-        }
-        state.activeStep = nextStepKey;
-      } else {
-        state.modalOpen = false;
-        if (state.onWorkflowComplete) {
-          state.onWorkflowComplete();
-        }
-      }
+      advanceToNextStep(state);
     },
 
     nextSubStep(state) {
@@ -267,6 +276,19 @@ const workflowSlice = createSlice({
     },
 
     resetAll: () => initialState,
+  },
+  extraReducers: (builder) => {
+    // The host enables the identity step up front so a fast candidate cannot finish the
+    // workflow before init responds; drop it once the template turns out not to verify.
+    builder.addCase(fetchToken.fulfilled, (state, action) => {
+      const step = state.steps.identityVerification;
+      if (!step.enabled || isIdentityStepWanted(true, action.payload.identity)) return;
+
+      step.enabled = false;
+      if (state.activeStep === 'identityVerification') {
+        advanceToNextStep(state);
+      }
+    });
   },
 });
 

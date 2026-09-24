@@ -36,6 +36,7 @@ export interface WorkflowState {
     cameraShare: StepState;
     mobileCameraShare: StepState;
     compatibilityChecks: StepState;
+    identityVerification: StepState;
   };
   beepConfig: beepConfigState;
   onWorkflowComplete: () => void;

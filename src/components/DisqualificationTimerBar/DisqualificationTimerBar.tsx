@@ -14,7 +14,7 @@ interface DisqualificationTimerBarProps {
   };
 }
 
-const STEP_VS_MESSAGE_MAPPING = {
+const STEP_VS_MESSAGE_MAPPING: Record<WorkflowStepKey, { message: string; time: number }> = {
   screenShare: {
     message: 'Disqualified in',
     time: 45,
@@ -28,6 +28,11 @@ const STEP_VS_MESSAGE_MAPPING = {
     time: 120,
   },
   compatibilityChecks: {
+    message: 'Disqualified in',
+    time: 45,
+  },
+  // Unused: identity is verified before the test, never in the in-test re-check modal.
+  identityVerification: {
     message: 'Disqualified in',
     time: 45,
   },
