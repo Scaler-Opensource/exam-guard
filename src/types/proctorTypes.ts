@@ -78,6 +78,7 @@ export interface ProctorConfig {
 }
 
 export interface Proctor {
+  baseUrl: string | null;
   initializeProctoring(): Promise<void>;
   enableFullScreen(): void;
   handleScreenshareRequest({ disableScreenshot }: { disableScreenshot: boolean }): Promise<void>;
