@@ -7,7 +7,7 @@
     "dist/"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "start": "webpack serve --config webpack.config.js",
@@ -115,5 +115,37 @@
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.1.0",
     "worker-loader": "^3.0.8"
+  },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/src/**/*.test.{js,ts,tsx}"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "transform": {
+      "^.+\\.[jt]sx?$": [
+        "babel-jest",
+        {
+          "presets": [
+            [
+              "@babel/preset-env",
+              {
+                "targets": {
+                  "node": "current"
+                }
+              }
+            ],
+            "@babel/preset-typescript",
+            [
+              "@babel/preset-react",
+              {
+                "runtime": "automatic"
+              }
+            ]
+          ]
+        }
+      ]
+    }
   }
 }
