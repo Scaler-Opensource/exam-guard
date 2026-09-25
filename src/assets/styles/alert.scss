@@ -1,20 +1,16 @@
 $warning-modal-font-color: white;
-$warning-modal-bg-color: #A42137;
-$warning-modal-icon-bg-color: #851A2D;
-$warning-modal-action-font-color: #A42137;
+$warning-modal-bg-color: #a42137;
+$warning-modal-icon-bg-color: #851a2d;
+$warning-modal-action-font-color: #a42137;
 $warning-modal-action-bg-color: white;
 
-html, body {
-  font-size: 10px;
-}
-
-* {
-  box-sizing: border-box;
-}
+$warning-modal-networkAlert-bg-color: #d97706;
+$warning-modal-networkAlert-icon-bg-color: #b45309;
+$warning-modal-networkAlert-action-font-color: #b45309;
 
 .warning-modal {
   display: none;
-  padding: 1.6rem 2rem 2.4rem 2rem;
+  padding: 1.6rem 2rem 2.4rem;
   color: $warning-modal-font-color;
   border-radius: 1.6rem;
   background-color: $warning-modal-bg-color;
@@ -25,7 +21,6 @@ html, body {
   transform: translateX(-50%);
   max-width: 47rem;
   font-size: 1.6rem;
-
 
   &__close-btn {
     position: absolute;
@@ -72,5 +67,18 @@ html, body {
     border-radius: 0.4rem;
     font-weight: 600;
     margin-top: 2.4rem;
+  }
+
+  &--networkAlert {
+    background-color: $warning-modal-networkAlert-bg-color;
+
+    .warning-modal__close-btn,
+    .warning-modal__icon-wrap {
+      background-color: $warning-modal-networkAlert-icon-bg-color;
+    }
+
+    .warning-modal__action {
+      color: $warning-modal-networkAlert-action-font-color;
+    }
   }
 }
