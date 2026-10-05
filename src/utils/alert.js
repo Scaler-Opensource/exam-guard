@@ -1,9 +1,18 @@
 import alertHtml from '../templates/alert.html';
 import warningIcon from '../assets/images/white-warning.svg';
 
-export function closeModal() {
+export function closeModal(trigger = false) {
   const modal = document.getElementById('warning-modal');
   if (modal) {
+    const isManualUserClick = trigger && (trigger.type === 'click' || trigger instanceof Event);
+
+    if (isManualUserClick) {
+      modal.style.display = 'none';
+      return;
+    }
+    const fromNetworkCheck = trigger;
+    const isNetworkModalActive = modal.classList.contains('warning-modal--networkAlert');
+    if (fromNetworkCheck !== isNetworkModalActive) return;
     modal.style.display = 'none';
   }
 }
@@ -28,7 +37,7 @@ export function setupAlert() {
   }
 }
 
-export function showViolationWarning(heading, text, hideAction = false) {
+export function showViolationWarning(heading, text, hideAction = false, networkAlert = false) {
   const modal = document.getElementById('warning-modal');
   const modalHeading = document.getElementById('warning-modal-heading');
   const modalText = document.getElementById('warning-modal-text');
@@ -38,6 +47,12 @@ export function showViolationWarning(heading, text, hideAction = false) {
     // Set new heading and text
     modalHeading.textContent = heading;
     modalText.textContent = text;
+
+    modal.classList.remove('warning-modal--networkAlert');
+    modal.style.display = 'none';
+    if (networkAlert) {
+      modal.classList.add('warning-modal--networkAlert');
+    }
 
     // Display the modal
     modal.style.display = 'block';
