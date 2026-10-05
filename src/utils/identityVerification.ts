@@ -10,6 +10,9 @@ export interface IdentityPolicy {
   required: boolean;
   max_attempts?: number;
   max_captures?: number;
+  liveness?: { mode: IdentityMode; required: boolean };
+  camera_integrity?: { mode: IdentityMode };
+  verification_window_minutes?: number;
 }
 
 // GET /api/v1/proctoring/identity/status
@@ -24,6 +27,7 @@ export interface IdentityStatus {
   attempts_remaining?: number | null;
   captures_remaining?: number | null;
   retry_after?: number | null;
+  liveness?: { mode: IdentityMode; status?: string | null } | null;
 }
 
 export type IdentityPhase = 'loading' | 'skip' | 'capture' | 'verifying' | 'done' | 'blocked';
@@ -49,7 +53,17 @@ const REASON_MESSAGES: Record<string, string> = {
   attempts_exhausted: 'Your photos did not match your reference photo.',
   captures_exhausted: 'You have used all your verification attempts.',
   engine_timeout: 'Verification is taking longer than expected.',
+  liveness_failed: "We couldn't confirm a live person in front of the camera. Face the camera in good light and try again.",
+  liveness_expired: "The liveness check didn't finish in time. Try again.",
+  liveness_incomplete: "The liveness check didn't finish. Try again.",
+  liveness_no_frame: "The liveness check couldn't capture your face. Face the camera and try again.",
+  engine_capacity: 'Many candidates are verifying right now. Please try again in a moment.',
+  virtual_camera: 'A virtual camera is selected. Choose your physical webcam to continue.',
 };
+
+export const isLivenessOn = (status: IdentityStatus | null | undefined): boolean => (
+  Boolean(status?.liveness) && status!.liveness!.mode !== 'off'
+);
 
 export const reasonMessage = (reason?: string | null): string => {
   if (reason && REASON_MESSAGES[reason]) return REASON_MESSAGES[reason];

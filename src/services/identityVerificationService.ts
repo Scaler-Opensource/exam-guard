@@ -5,7 +5,11 @@
 //   2. POST https://{bucket}.{s3_region_endpoint}/           upload the selfie
 //   3. POST {baseUrl}/api/v1/proctoring/identity/verifications  submit it -> 202, status pending
 //   4. GET  {baseUrl}/api/v1/proctoring/identity/status      poll until it settles
+//
+// With liveness on, steps 1-3 are replaced by a nonce for the proctoring-hosted liveness page:
+//      POST {baseUrl}/api/v1/proctoring/identity/liveness/nonce  -> { nonce, liveness_url }
 import { IdentityStatus } from '@/utils/identityVerification';
+import { CameraSignals } from '@/utils/cameraIntegrity';
 
 export class IdentityApiError extends Error {
   status: number;
@@ -108,4 +112,15 @@ export const verifySelfie = async ({
     if (error instanceof IdentityApiError && error.identity) return error.identity;
     throw error;
   }
+};
+
+export const requestLivenessNonce = async ({
+  baseUrl, token, signals,
+}: Session & { signals: CameraSignals }): Promise<{ nonce: string; livenessUrl: string }> => {
+  const data = await request(`${baseUrl}/api/v1/proctoring/identity/liveness/nonce`, {
+    token,
+    method: 'POST',
+    body: { signals },
+  });
+  return { nonce: data.nonce, livenessUrl: data.liveness_url };
 };

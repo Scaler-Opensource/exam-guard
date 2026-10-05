@@ -9,8 +9,12 @@ import StepHeader from '@/ui/StepHeader';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { nextStep, setSubStepStatus } from '@/store/features/workflowSlice';
-import { fetchIdentityStatus, verifySelfie } from '@/services/identityVerificationService';
-import { IdentityStatus, identityView, pollDelayMs } from '@/utils/identityVerification';
+import { fetchIdentityStatus, requestLivenessNonce, verifySelfie } from '@/services/identityVerificationService';
+import {
+  IdentityStatus, identityView, isLivenessOn, pollDelayMs, reasonMessage,
+} from '@/utils/identityVerification';
+import { cameraSignals } from '@/utils/cameraIntegrity';
+import LivenessFrame, { LivenessOutcome } from './LivenessFrame';
 import { WorkflowStepKey } from '@/types/workflowTypes';
 
 const STEP: WorkflowStepKey = 'identityVerification';
@@ -39,6 +43,7 @@ const IdentityVerificationStep = () => {
   const dispatch = useAppDispatch();
   const proctor = useAppSelector(selectProctor);
   const token = useAppSelector((state) => state.assessmentInfo.token);
+  const policy = useAppSelector((state) => state.assessmentInfo.identity);
   const steps = useAppSelector((state) => state.workflow.steps);
   const baseUrl = proctor?.baseUrl ?? '';
 
@@ -48,6 +53,8 @@ const IdentityVerificationStep = () => {
   const [cameraReady, setCameraReady] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [liveness, setLiveness] = useState<{ url: string; nonce: string } | null>(null);
 
   const view = identityView(status);
   const stepNumber = useMemo(
@@ -99,8 +106,10 @@ const IdentityVerificationStep = () => {
     if (view.phase === 'skip') dispatch(nextStep());
   }, [dispatch, view.phase]);
 
-  // The camera is only held while the candidate can take a photo.
-  const capturing = view.phase === 'capture';
+  // The camera is only held while the candidate can take a photo, and is released while the
+  // liveness page has it: some drivers won't open one camera twice.
+  const capturing = view.phase === 'capture' && !liveness;
+  const livenessOn = isLivenessOn(status);
   useEffect(() => {
     if (!capturing) return undefined;
     let stream: MediaStream | null = null;
@@ -112,6 +121,7 @@ const IdentityVerificationStep = () => {
           return;
         }
         stream = mediaStream;
+        streamRef.current = mediaStream;
         if (videoRef.current) videoRef.current.srcObject = mediaStream;
       })
       .catch(() => {
@@ -121,8 +131,34 @@ const IdentityVerificationStep = () => {
       cancelled = true;
       setCameraReady(false);
       stream?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     };
   }, [capturing]);
+
+  const handleStartLiveness = useCallback(async () => {
+    if (!token) return;
+    const signals = cameraSignals(streamRef.current?.getVideoTracks()[0]?.label);
+    if (signals.virtual_camera && policy?.camera_integrity?.mode === 'required') {
+      setError(reasonMessage('virtual_camera'));
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      const { nonce, livenessUrl } = await requestLivenessNonce({ baseUrl, token, signals });
+      setLiveness({ url: livenessUrl, nonce });
+    } catch {
+      setError('The liveness check could not start. Check your connection and try again.');
+    } finally {
+      setBusy(false);
+    }
+  }, [baseUrl, token, policy]);
+
+  const handleLivenessDone = useCallback((outcome: LivenessOutcome) => {
+    setLiveness(null);
+    if (outcome.type === 'error') setError(reasonMessage(outcome.code));
+    if (token) fetchIdentityStatus({ baseUrl, token }).then(setStatus).catch(() => setLoadAttempt((n) => n + 1));
+  }, [baseUrl, token]);
 
   const handleCapture = useCallback(async () => {
     const video = videoRef.current;
@@ -140,6 +176,8 @@ const IdentityVerificationStep = () => {
   }, [baseUrl, token]);
 
   const handleContinue = () => dispatch(nextStep());
+  const idleLabel = livenessOn ? 'Start liveness check' : 'Take photo';
+  const captureLabel = busy ? 'Starting…' : idleLabel;
 
   return (
     <>
@@ -161,6 +199,8 @@ const IdentityVerificationStep = () => {
           </div>
         )}
 
+        {liveness && <LivenessFrame url={liveness.url} nonce={liveness.nonce} onDone={handleLivenessDone} />}
+
         {(view.phase === 'loading' || view.phase === 'verifying') && !error && (
           <div className='mt-8'><Loader size='md' /></div>
         )}
@@ -173,11 +213,11 @@ const IdentityVerificationStep = () => {
               variant='primary'
               size='lg'
               className='items-center gap-3'
-              onClick={handleCapture}
+              onClick={livenessOn ? handleStartLiveness : handleCapture}
               disabled={!cameraReady || busy}
             >
               <Camera className='w-6 h-6' />
-              {busy ? 'Uploading…' : 'Take photo'}
+              {captureLabel}
             </Button>
           )}
           {view.phase === 'loading' && error && (
@@ -185,7 +225,7 @@ const IdentityVerificationStep = () => {
               Try again
             </Button>
           )}
-          {view.canProceed && view.phase !== 'skip' && (
+          {view.canProceed && view.phase !== 'skip' && !liveness && (
             <Button
               variant={capturing ? 'outline' : 'primary'}
               size='lg'
