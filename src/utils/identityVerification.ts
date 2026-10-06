@@ -58,6 +58,7 @@ const REASON_MESSAGES: Record<string, string> = {
   unknown_liveness_session: 'This check expired. Start it again.',
   liveness_session_expired: 'This check expired. Start a new one.',
   already_verified: 'You are already verified for this test.',
+  already_captured: 'Your check is already recorded for this test.',
   verification_in_progress: 'Your previous check is still being verified. Please wait for the result.',
   not_required: 'This test does not need identity verification.',
   consent_required: 'Agree to the face scan to continue.',

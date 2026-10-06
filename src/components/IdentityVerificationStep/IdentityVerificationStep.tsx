@@ -262,7 +262,8 @@ const IdentityVerificationStep = () => {
     );
   }
 
-  const verifiedRows = ['Face detected', ...(livenessOn ? ['Liveness passed'] : []), 'Matched with your Scaler record'];
+  const verifiedRows = ['Face detected', ...(livenessOn ? ['Liveness passed'] : []),
+    ...(state === 'verified' ? ['Matched with your Scaler record'] : [])];
   const continueButton = screen.canProceed && !liveness && (
     <Button variant={state === 'verified' ? 'primary' : 'outline'} size='lg' className='items-center gap-3' onClick={handleContinue} disabled={busy}>
       {state === 'capture' ? 'Continue without verifying' : 'Continue'}
@@ -350,12 +351,13 @@ const IdentityVerificationStep = () => {
           </IdentityCard>
         )}
 
-        {state === 'verified' && (
+        {(state === 'verified' || state === 'captured') && (
           <IdentityCard>
             <div className='flex gap-8 items-center'>
               <img src={identityMedia(baseUrl, 'illus-face.jpg')} alt='' className='w-72 rounded-lg border-4 border-green-600' />
               <div className='flex-1'>
                 <h3 className='text-xl font-bold text-base-700'>{screen.title}</h3>
+                {screen.body && <p className='mt-2 text-sm text-base-500'>{screen.body}</p>}
                 <CheckRows rows={verifiedRows} />
               </div>
             </div>
