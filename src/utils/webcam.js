@@ -1,5 +1,23 @@
 import webcamHtml from '../templates/webcam.html';
 import resizeImage from './image';
+import { getIndexDbBufferInstance } from './indexDbBuffer';
+
+// Track active stream globally
+let activeStream = null;
+
+const LOW_QUALITY_CONSTRAINTS = {
+  video: {
+    width: { ideal: 640 },
+    height: { ideal: 480 },
+    frameRate: { ideal: 4 }, // Reduced from typical 30fps
+    facingMode: 'user',
+    // Advanced constraints for supported browsers
+    advanced: [
+      { aspectRatio: 4 / 3 },
+      { resizeMode: 'crop-and-scale' }, // Helps with performance
+    ],
+  },
+};
 
 export function getVideoElement() {
   const videoElement = document.getElementById('webcam');
@@ -7,11 +25,11 @@ export function getVideoElement() {
 }
 
 export function captureSnapshot({
-  onSnapshotSuccess,
   onSnapshotFailure,
   resizeDimensions,
 }) {
   const videoElement = getVideoElement();
+  const queueManager = getIndexDbBufferInstance();
 
   if (videoElement) {
     const canvas = document.createElement('canvas');
@@ -20,26 +38,44 @@ export function captureSnapshot({
     canvas.height = videoElement.videoHeight;
     ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-    const imageSrc = canvas.toDataURL('image/png');
+    // Get the image source as a data URL
+    const imageSrc = canvas.toDataURL('image/jpeg'); // Get base64 image data
 
-    // Resize image using ImageUtils
+    // Use the resizeImage function to resize and return a smaller blob
     resizeImage(imageSrc, resizeDimensions)
       .then((blob) => {
-        onSnapshotSuccess?.({ blob });
+        queueManager.addSnapshot(blob, 'webcam')
+          .catch((error) => {
+            onSnapshotFailure?.({ error });
+          });
       })
       .catch((error) => {
         onSnapshotFailure?.({ error });
       });
+  } else {
+    onSnapshotFailure?.({ error: new Error('No video element found') });
   }
 }
 
 // Start taking Snapshots at regular intervals
+let snapshotIntervalId = null;
+
 export function setupSnapshotCapture({
-  onSnapshotSuccess, onSnapshotFailure, frequency, resizeDimensions,
+  onSnapshotFailure,
+  frequency,
+  resizeDimensions,
 }) {
-  setInterval(() => {
-    captureSnapshot({ onSnapshotSuccess, onSnapshotFailure, resizeDimensions });
+  // Clear any existing interval
+  if (snapshotIntervalId) {
+    clearInterval(snapshotIntervalId);
+  }
+
+  snapshotIntervalId = setInterval(() => {
+    captureSnapshot({ onSnapshotFailure, resizeDimensions });
   }, frequency);
+
+  // Return interval ID so it can be cleared on unmount if needed
+  return snapshotIntervalId;
 }
 
 export function setupWebcam() {
@@ -104,11 +140,10 @@ function checkForBlackFrame(
     const frame = context.getImageData(0, 0, canvas.width, canvas.height).data;
 
     if (isMostlyBlackFrame(frame, blackPixelThreshold)) {
-      onWebcamDisabled?.({ error: new Error('Mostly black video feed detected') });
-      videoElement.pause();
-      // eslint-disable-next-line no-param-reassign
-      videoElement.srcObject = null;
-      stream.getTracks().forEach((track) => track.stop());
+      onWebcamDisabled?.({
+        error: new Error('Mostly black video feed detected'),
+      });
+      // Don't stop the stream, just notify about black frame
     } else {
       onWebcamEnabled?.({ videoElement });
     }
@@ -117,15 +152,69 @@ function checkForBlackFrame(
   setTimeout(checkBlackFrame, 1000); // Delay to allow video to start
 }
 
-// Detect webcam and set up the stream
+export async function getAvailableCameras() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices
+      .filter((device) => device.kind === 'videoinput')
+      .map((device) => ({
+        id: device.deviceId,
+        label: device.label || `Camera ${device.deviceId.slice(0, 4)}...`,
+      }));
+  } catch (error) {
+    console.error('Error getting cameras:', error);
+    return [];
+  }
+}
+
+// Cleanup function to stop camera stream
+export function cleanupWebcam() {
+  if (activeStream) {
+    activeStream.getTracks().forEach((track) => track.stop());
+    activeStream = null;
+  }
+  const videoElement = getVideoElement();
+  if (videoElement) {
+    videoElement.srcObject = null;
+  }
+}
+
 export function detectWebcam({
   onWebcamEnabled,
   onWebcamDisabled,
   optional,
-  blackPixelThreshold = 0.8, // 80% of the video should not be black
+  blackPixelThreshold = 0.8,
+  deviceId = null || '',
 }) {
-  navigator.mediaDevices.getUserMedia({ video: true })
+  // If there's already an active stream, reuse it
+  if (activeStream) {
+    const videoElement = getVideoElement();
+    if (videoElement) {
+      videoElement.srcObject = activeStream;
+      videoElement.onloadedmetadata = () => {
+        videoElement.play();
+        checkForBlackFrame(
+          videoElement,
+          activeStream,
+          blackPixelThreshold,
+          onWebcamEnabled,
+          onWebcamDisabled,
+        );
+      };
+      return;
+    }
+  }
+
+  navigator.mediaDevices
+    .getUserMedia({
+      ...LOW_QUALITY_CONSTRAINTS,
+      video: {
+        ...LOW_QUALITY_CONSTRAINTS.video,
+        deviceId: { exact: deviceId || undefined },
+      },
+    })
     .then((stream) => {
+      activeStream = stream; // Store stream globally
       const videoElement = getVideoElement();
       if (videoElement) {
         videoElement.srcObject = stream;
