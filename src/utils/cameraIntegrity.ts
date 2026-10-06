@@ -10,6 +10,8 @@ export interface CameraSignals {
   virtual_camera: boolean;
   webdriver: boolean;
   headless: boolean;
+  // The camera chosen at the desktop camera step; the service flags a different one.
+  previous_camera_label?: string;
 }
 
 export const isVirtualCameraLabel = (label: string | undefined | null): boolean => (

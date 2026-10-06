@@ -28,6 +28,9 @@ export interface IdentityStatus {
   captures_remaining?: number | null;
   retry_after?: number | null;
   liveness?: { mode: IdentityMode; status?: string | null } | null;
+  consent?: { required: boolean; given: boolean; version: string } | null;
+  // Set when the candidate is blocked: what they quote to support.
+  reference_id?: string | null;
 }
 
 export type IdentityPhase = 'loading' | 'skip' | 'capture' | 'verifying' | 'done' | 'blocked';
@@ -67,6 +70,8 @@ const REASON_MESSAGES: Record<string, string> = {
   already_verified: 'You are already verified for this test.',
   verification_in_progress: 'Your previous check is still being verified. Please wait for the result.',
   not_required: 'This test does not need identity verification.',
+  consent_required: 'Agree to the face scan to continue.',
+  consent_version_outdated: 'The consent text has changed. Reload the page and agree again.',
   service_unavailable: 'The verification service is unavailable right now.',
   request_failed: 'The request failed. Check your connection and try again.',
   upload_failed: "Your photo didn't upload. Check your connection and try again.",

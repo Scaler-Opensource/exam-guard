@@ -87,6 +87,8 @@ export interface Proctor {
   handleScreenshareStop(): void;
   getWebcamDevices(): Promise<Array<{ id: string; label: string }>>;
   setWebcamDevice(deviceId: string): void;
+  // deviceId is the camera chosen at the desktop camera step.
+  snapshotConfig?: { deviceId?: string; [key: string]: unknown };
   disqualifyUser(): void;
   on(
     violationType: string,
