@@ -100,6 +100,13 @@ describe('errorText', () => {
     expect(errorText('engine_unavailable')).toBe('The verification service is unavailable right now. Please try again in a moment. (Error code: engine_unavailable)');
   });
 
+  it('explains the rejections the proctoring service can return', () => {
+    ['already_verified', 'verification_in_progress', 'not_required', 'liveness_session_expired', 'service_unavailable'].forEach((code) => {
+      expect(errorText(code)).not.toMatch(/^Please try again\./);
+      expect(errorText(code)).toContain(`(Error code: ${code})`);
+    });
+  });
+
   it('prefers the message sent by the liveness page', () => {
     expect(errorText('FACE_DISTANCE_ERROR', 'Move a little further away.')).toBe('Move a little further away. (Error code: FACE_DISTANCE_ERROR)');
   });

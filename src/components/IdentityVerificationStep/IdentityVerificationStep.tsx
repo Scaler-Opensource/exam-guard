@@ -151,6 +151,8 @@ const IdentityVerificationStep = () => {
       setLiveness({ url: livenessUrl, nonce });
     } catch (err) {
       setError(errorText(err instanceof IdentityApiError ? err.message : 'request_failed'));
+      // An outage is recorded server-side; the fresh status shows whether the template lets them continue.
+      fetchIdentityStatus({ baseUrl, token }).then(setStatus).catch(() => setLoadAttempt((n) => n + 1));
     } finally {
       setBusy(false);
     }

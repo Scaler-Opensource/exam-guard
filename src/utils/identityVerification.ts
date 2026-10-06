@@ -63,6 +63,11 @@ const REASON_MESSAGES: Record<string, string> = {
   liveness_not_enabled: 'This test does not use the liveness check.',
   engine_unavailable: 'The verification service is unavailable right now. Please try again in a moment.',
   unknown_liveness_session: 'This check expired. Start it again.',
+  liveness_session_expired: 'This check expired. Start a new one.',
+  already_verified: 'You are already verified for this test.',
+  verification_in_progress: 'Your previous check is still being verified. Please wait for the result.',
+  not_required: 'This test does not need identity verification.',
+  service_unavailable: 'The verification service is unavailable right now.',
   request_failed: 'The request failed. Check your connection and try again.',
   upload_failed: "Your photo didn't upload. Check your connection and try again.",
 };
