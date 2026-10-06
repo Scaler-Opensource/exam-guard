@@ -1,7 +1,7 @@
 import React, {
   useCallback, useEffect, useRef, useState,
 } from 'react';
-import { ArrowRight, Camera } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
@@ -17,14 +17,16 @@ import {
 import {
   IdentityStatus, errorText, isLivenessOn, pollDelayMs,
 } from '@/utils/identityVerification';
-import { CONSENT_VERSION, VERIFIED_CONFIRMATION, identityScreen } from '@/utils/identityScreen';
+import {
+  CAPTURE_COPY, CONSENT_COPY, CONSENT_VERSION, VERIFIED_CONFIRMATION, identityScreen,
+} from '@/utils/identityScreen';
 import { CameraSignals, cameraSignals } from '@/utils/cameraIntegrity';
 import { WorkflowStepKey } from '@/types/workflowTypes';
 import ConsentCard from './ConsentCard';
 import LivenessFrame, { LivenessOutcome } from './LivenessFrame';
 import PositioningModal from './PositioningModal';
 import {
-  AttemptChip, CheckRows, HelpLine, IdentityCard, identityMedia,
+  CameraFrame, CheckRows, FixBox, HelpLine, IdentityCard, IdlePanel, IllustrationPanel, InfoRow, PanelHeading, Split, TwoColumns,
 } from './IdentityCard';
 
 const STEP: WorkflowStepKey = 'identityVerification';
@@ -76,6 +78,8 @@ const IdentityVerificationStep = () => {
   const [retrying, setRetrying] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [declined, setDeclined] = useState(false);
   const [previousLabel, setPreviousLabel] = useState('');
   const guideShown = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -244,6 +248,7 @@ const IdentityVerificationStep = () => {
   };
 
   const handleContinue = () => dispatch(nextStep());
+  const openGuide = () => setGuideOpen(true);
   const header = <StepHeader stepNumber={stepNumber} title='Identity Verification' status={tone} />;
 
   if (state === 'loading' || state === 'skip') {
@@ -262,138 +267,171 @@ const IdentityVerificationStep = () => {
     );
   }
 
-  const verifiedRows = ['Face detected', ...(livenessOn ? ['Liveness passed'] : []),
-    ...(state === 'verified' ? ['Matched with your Scaler record'] : [])];
-  const continueButton = screen.canProceed && !liveness && (
-    <Button variant={state === 'verified' ? 'primary' : 'outline'} size='lg' className='items-center gap-3' onClick={handleContinue} disabled={busy}>
-      {state === 'capture' ? 'Continue without verifying' : 'Continue'}
+  const continueButton = (label = 'Continue') => screen.canProceed && !liveness && (
+    <Button variant='outline' size='lg' className='items-center gap-3' onClick={handleContinue} disabled={busy}>
+      {label}
       <ArrowRight className='w-6 h-6' />
     </Button>
   );
+  const guideButton = <Button variant='outline' size='lg' onClick={openGuide}>See how to do it</Button>;
+  const checkboxRow = (id: string, checked: boolean, onChange: (value: boolean) => void, label: string) => (
+    <div className='flex items-start text-sm'>
+      <Checkbox id={id} className='mt-1 mr-4 h-6 w-6' checked={checked} onCheckedChange={(value) => onChange(value === true)} />
+      <label htmlFor={id} className='cursor-pointer text-sm text-gray-600'>{label}</label>
+    </div>
+  );
+  const rows = ['We saw your face', ...(livenessOn ? ['We know you are really there'] : []),
+    ...(state === 'verified' ? ['Your face matches the photo on your record'] : [])];
+
+  let card: React.ReactNode = null;
+  let footer: React.ReactNode = null;
+  if (state === 'consent') {
+    card = <ConsentCard baseUrl={baseUrl} onOpenGuide={openGuide} />;
+    footer = (
+      <>
+        {checkboxRow('identity-consent', agreed, setAgreed, CONSENT_COPY.checkbox)}
+        <div className='mt-8 flex items-center gap-6'>
+          <Button variant='primary' size='lg' className='items-center gap-3' disabled={!agreed || busy} onClick={handleConsent}>
+            Start face check
+            <ArrowRight className='w-6 h-6' />
+          </Button>
+          <Button variant='outline' size='lg' onClick={() => setDeclined(true)}>I do not agree</Button>
+        </div>
+        {declined && !agreed && <p className='mt-4 text-sm text-red-500'>{CONSENT_COPY.declined}</p>}
+        {error && <p className='mt-4 text-sm text-red-500'>{error}</p>}
+      </>
+    );
+  } else if (state === 'capture') {
+    card = (
+      <IdentityCard banner={error}>
+        <TwoColumns>
+          <div>
+            {liveness ? (
+              <LivenessFrame url={liveness.url} nonce={liveness.nonce} onDone={handleLivenessDone} className='h-[52rem] w-full' />
+            ) : (
+              <CameraFrame ring={cameraReady ? 'framed' : 'searching'} pill={CAPTURE_COPY.pill} live>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  onLoadedData={() => setCameraReady(true)}
+                  className='h-full w-full object-cover'
+                  style={{ transform: 'scale(-1, 1)' }}
+                />
+              </CameraFrame>
+            )}
+            <p className='mt-3 text-center text-sm text-base-500'>{CAPTURE_COPY.caption}</p>
+          </div>
+          <IdlePanel spinner={!cameraReady || Boolean(liveness)}>
+            {liveness ? CAPTURE_COPY.running : (cameraReady ? CAPTURE_COPY.ready : CAPTURE_COPY.waiting)}
+          </IdlePanel>
+        </TwoColumns>
+      </IdentityCard>
+    );
+    footer = capturing && (
+      <div className='flex items-center gap-6'>
+        <Button variant='primary' size='lg' className='items-center gap-3' disabled={!cameraReady || busy}
+          onClick={livenessOn ? handleStartLiveness : handleCapture}>
+          {busy ? 'Starting…' : 'Start face check'}
+          <ArrowRight className='w-6 h-6' />
+        </Button>
+        {guideButton}
+        {continueButton('Continue without verifying')}
+      </div>
+    );
+  } else if (state === 'analysing') {
+    card = (
+      <IdentityCard>
+        <TwoColumns>
+          <CameraFrame ring='framed' />
+          <IdlePanel>{screen.title}</IdlePanel>
+        </TwoColumns>
+      </IdentityCard>
+    );
+  } else if (state === 'verified' || state === 'captured') {
+    card = (
+      <IdentityCard>
+        <TwoColumns>
+          <CameraFrame ring='done' />
+          <div>
+            <PanelHeading title={screen.title} sub={screen.body} done />
+            <CheckRows rows={rows} />
+          </div>
+        </TwoColumns>
+      </IdentityCard>
+    );
+    footer = (
+      <>
+        {checkboxRow('identity-confirm', confirmed, setConfirmed, VERIFIED_CONFIRMATION)}
+        <Button variant='primary' size='lg' className='mt-8 items-center gap-3' disabled={!confirmed} onClick={handleContinue}>
+          Next step
+          <ArrowRight className='w-6 h-6' />
+        </Button>
+      </>
+    );
+  } else if (state === 'attempt_failed') {
+    card = (
+      <IdentityCard banner={error || screen.banner}>
+        <TwoColumns>
+          <CameraFrame ring='failed' pill='This attempt did not work' pillTone='error' />
+          <div>
+            <PanelHeading title={screen.title} sub={screen.body} />
+            <FixBox tip={screen.tip} onOpenGuide={openGuide} />
+            {screen.attemptsLeft != null && <InfoRow label='Attempts left' value={screen.attemptsLeft} />}
+          </div>
+        </TwoColumns>
+      </IdentityCard>
+    );
+    footer = (
+      <div className='flex items-center gap-6'>
+        {screen.canRetry && <Button variant='primary' size='lg' onClick={handleRetry}>Try again</Button>}
+        {guideButton}
+        {continueButton()}
+      </div>
+    );
+  } else if (state === 'blocked') {
+    card = (
+      <IdentityCard banner={screen.banner}>
+        <Split>
+          <IllustrationPanel tone='error' baseUrl={baseUrl} />
+          <div>
+            <PanelHeading title={screen.title} sub={screen.body} />
+            <ul className='mt-4 list-disc space-y-2 pl-5 text-base text-base-500'>
+              {screen.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
+            </ul>
+            {screen.referenceId && <InfoRow label='Reference ID' value={screen.referenceId} />}
+          </div>
+        </Split>
+      </IdentityCard>
+    );
+  } else if (state === 'service_error') {
+    card = (
+      <IdentityCard banner={screen.banner}>
+        <Split>
+          <IllustrationPanel tone='neutral' baseUrl={baseUrl} />
+          <div>
+            <PanelHeading title={screen.title} sub={screen.body} />
+            {screen.attemptsUsed != null && <InfoRow label='Attempts used' value={screen.attemptsUsed} />}
+          </div>
+        </Split>
+      </IdentityCard>
+    );
+    footer = (
+      <div className='flex items-center gap-6'>
+        <Button variant='primary' size='lg' onClick={handleRetry}>Try again</Button>
+        {continueButton()}
+      </div>
+    );
+  }
 
   return (
     <>
       {header}
-      <div className='mt-12 max-w-5xl'>
-        {state === 'consent' && <ConsentCard baseUrl={baseUrl} busy={busy} onAccept={handleConsent} />}
-        {state === 'consent' && error && <p className='mt-4 text-sm text-red-500'>{error}</p>}
-
-        {['capture', 'analysing', 'attempt_failed'].includes(state) && (
-          <IdentityCard banner={error || (state === 'attempt_failed' ? screen.banner : '')}>
-            <div className='flex gap-8'>
-              <div className='flex-1 flex flex-col items-center'>
-                {liveness && (
-                  <LivenessFrame url={liveness.url} nonce={liveness.nonce} onDone={handleLivenessDone} className='w-full h-[560px]' />
-                )}
-                {capturing && (
-                  <div className='relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-base-100'>
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      muted
-                      playsInline
-                      onLoadedData={() => setCameraReady(true)}
-                      className='w-full h-full object-cover'
-                      style={{ transform: 'scale(-1, 1)' }}
-                    />
-                    <div className={`absolute inset-y-[10%] inset-x-[28%] rounded-[50%] border-4 ${cameraReady ? 'border-scaler-500' : 'border-base-200'}`} />
-                  </div>
-                )}
-                {!liveness && !capturing && (
-                  <img
-                    src={identityMedia(baseUrl, 'illus-face.jpg')}
-                    alt=''
-                    className={`w-full rounded-lg border-4 ${state === 'attempt_failed' ? 'border-red-500' : 'border-transparent'}`}
-                  />
-                )}
-                {capturing && <p className='mt-3 text-sm text-base-500'>Keep your face inside the oval.</p>}
-              </div>
-              <div className='w-80 flex flex-col justify-center rounded-lg bg-base-100 p-6'>
-                {state === 'analysing' ? (
-                  <div className='flex flex-col items-center gap-4'>
-                    <Loader size='md' />
-                    <p className='text-sm font-semibold text-base-700'>{screen.title}</p>
-                  </div>
-                ) : (
-                  <>
-                    <h3 className='text-xl font-bold text-base-700'>{state === 'attempt_failed' ? screen.title : "Verify it's you"}</h3>
-                    {screen.attempt && <div className='mt-3'><AttemptChip current={screen.attempt.current} max={screen.attempt.max} /></div>}
-                    <p className='mt-3 text-sm text-base-500'>
-                      {liveness && 'Follow the prompts in the camera window. Keep your face inside the oval.'}
-                      {capturing && (cameraReady ? 'You are in frame. Start when ready.' : 'Waiting for you to get in frame')}
-                      {state === 'attempt_failed' && 'Check the positioning guide, then try again.'}
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className='mt-8 flex items-center gap-6'>
-              {capturing && (
-                <Button
-                  variant='primary'
-                  size='lg'
-                  className='items-center gap-3'
-                  onClick={livenessOn ? handleStartLiveness : handleCapture}
-                  disabled={!cameraReady || busy}
-                >
-                  <Camera className='w-6 h-6' />
-                  {busy ? 'Starting…' : 'Start face scan'}
-                </Button>
-              )}
-              {state === 'attempt_failed' && screen.canRetry && (
-                <Button variant='primary' size='lg' onClick={handleRetry}>Try again</Button>
-              )}
-              {state === 'attempt_failed' && (
-                <Button variant='outline' size='lg' onClick={() => setGuideOpen(true)}>View positioning guide</Button>
-              )}
-              {continueButton}
-            </div>
-          </IdentityCard>
-        )}
-
-        {(state === 'verified' || state === 'captured') && (
-          <IdentityCard>
-            <div className='flex gap-8 items-center'>
-              <img src={identityMedia(baseUrl, 'illus-face.jpg')} alt='' className='w-72 rounded-lg border-4 border-green-600' />
-              <div className='flex-1'>
-                <h3 className='text-xl font-bold text-base-700'>{screen.title}</h3>
-                {screen.body && <p className='mt-2 text-sm text-base-500'>{screen.body}</p>}
-                <CheckRows rows={verifiedRows} />
-              </div>
-            </div>
-            <label className='mt-6 flex items-start gap-3 text-sm text-base-500 cursor-pointer'>
-              <Checkbox checked={confirmed} onCheckedChange={(value) => setConfirmed(value === true)} className='mt-0.5' />
-              {VERIFIED_CONFIRMATION}
-            </label>
-            <Button variant='primary' size='lg' className='mt-6 items-center gap-3' disabled={!confirmed} onClick={handleContinue}>
-              Proceed to next step
-              <ArrowRight className='w-6 h-6' />
-            </Button>
-          </IdentityCard>
-        )}
-
-        {state === 'blocked' && (
-          <IdentityCard banner={screen.banner || screen.title}>
-            <h3 className='text-xl font-bold text-base-700'>{screen.title}</h3>
-            <p className='mt-3 text-base text-base-500'>{screen.body}</p>
-            {screen.referenceId && (
-              <p className='mt-6 text-base font-bold text-base-700'>Reference ID: {screen.referenceId}</p>
-            )}
-          </IdentityCard>
-        )}
-
-        {state === 'service_error' && (
-          <IdentityCard>
-            <h3 className='text-xl font-bold text-base-700'>{screen.title}</h3>
-            <p className='mt-3 text-base text-base-500'>{screen.body}</p>
-            <div className='mt-8 flex items-center gap-6'>
-              <Button variant='primary' size='lg' onClick={handleRetry}>Try again</Button>
-              {continueButton}
-            </div>
-          </IdentityCard>
-        )}
-
-        <HelpLine onOpen={() => setGuideOpen(true)} />
+      <div className='mt-16 w-full'>
+        {card}
+        <HelpLine onOpen={openGuide} />
+        {footer && <div className='mt-16'>{footer}</div>}
       </div>
       <PositioningModal baseUrl={baseUrl} isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
     </>
