@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
 // service from Rekognition, so these messages only drive the UI.
 const PROTOCOL_VERSION = 1;
 
-export type LivenessOutcome = { type: 'complete' } | { type: 'error'; code: string } | { type: 'close' };
+export type LivenessOutcome = { type: 'complete' } | { type: 'error'; code: string; message?: string } | { type: 'close' };
 
 interface Props {
   url: string;
@@ -32,7 +32,7 @@ const LivenessFrame = ({
       } else if (data.type === 'complete') {
         onDone({ type: 'complete' });
       } else if (data.type === 'error') {
-        onDone({ type: 'error', code: String(data.code || 'liveness_error') });
+        onDone({ type: 'error', code: String(data.code || 'liveness_error'), message: data.message ? String(data.message) : undefined });
       } else if (data.type === 'close') {
         onDone({ type: 'close' });
       }

@@ -1,5 +1,6 @@
 import {
   IdentityStatus,
+  errorText,
   identityView,
   isIdentityStepWanted,
   pollDelayMs,
@@ -91,5 +92,15 @@ describe('pollDelayMs', () => {
     expect(pollDelayMs(status({ retry_after: 0 }))).toBe(1000);
     expect(pollDelayMs(status({ retry_after: 30 }))).toBe(5000);
     expect(pollDelayMs(status({ retry_after: null }))).toBe(2000);
+  });
+});
+
+describe('errorText', () => {
+  it('shows a specific message with the code support can look up', () => {
+    expect(errorText('engine_unavailable')).toBe('The verification service is unavailable right now. Please try again in a moment. (Error code: engine_unavailable)');
+  });
+
+  it('prefers the message sent by the liveness page', () => {
+    expect(errorText('FACE_DISTANCE_ERROR', 'Move a little further away.')).toBe('Move a little further away. (Error code: FACE_DISTANCE_ERROR)');
   });
 });

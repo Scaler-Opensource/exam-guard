@@ -1,6 +1,7 @@
 import {
   IdentityApiError,
   fetchIdentityStatus,
+  reportCameraChange,
   verifySelfie,
 } from '@/services/identityVerificationService';
 
@@ -93,5 +94,21 @@ describe('identityVerificationService', () => {
     const error = await fetchIdentityStatus({ baseUrl: BASE_URL, token: TOKEN }).catch((e) => e);
     expect(error).toBeInstanceOf(IdentityApiError);
     expect(error).toMatchObject({ message: 'request_failed', status: 403 });
+  });
+});
+
+describe('reportCameraChange', () => {
+  it('posts the camera signals with the session token', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await reportCameraChange({
+      baseUrl: 'https://p.example', token: 'tok', signals: { camera_label: 'OBS Virtual Camera', virtual_camera: true, webdriver: false, headless: false },
+    });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://p.example/api/v1/proctoring/identity/camera_signals');
+    expect(init.headers['X-Session-Token']).toBe('tok');
+    expect(JSON.parse(init.body).signals.virtual_camera).toBe(true);
   });
 });

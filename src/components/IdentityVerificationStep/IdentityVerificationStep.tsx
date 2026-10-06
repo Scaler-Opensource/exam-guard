@@ -9,9 +9,11 @@ import StepHeader from '@/ui/StepHeader';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { nextStep, setSubStepStatus } from '@/store/features/workflowSlice';
-import { fetchIdentityStatus, requestLivenessNonce, verifySelfie } from '@/services/identityVerificationService';
 import {
-  IdentityStatus, identityView, isLivenessOn, pollDelayMs, reasonMessage,
+  IdentityApiError, fetchIdentityStatus, requestLivenessNonce, verifySelfie,
+} from '@/services/identityVerificationService';
+import {
+  IdentityStatus, errorText, identityView, isLivenessOn, pollDelayMs,
 } from '@/utils/identityVerification';
 import { cameraSignals } from '@/utils/cameraIntegrity';
 import LivenessFrame, { LivenessOutcome } from './LivenessFrame';
@@ -139,7 +141,7 @@ const IdentityVerificationStep = () => {
     if (!token) return;
     const signals = cameraSignals(streamRef.current?.getVideoTracks()[0]?.label);
     if (signals.virtual_camera && policy?.camera_integrity?.mode === 'required') {
-      setError(reasonMessage('virtual_camera'));
+      setError(errorText('virtual_camera'));
       return;
     }
     setBusy(true);
@@ -147,8 +149,8 @@ const IdentityVerificationStep = () => {
     try {
       const { nonce, livenessUrl } = await requestLivenessNonce({ baseUrl, token, signals });
       setLiveness({ url: livenessUrl, nonce });
-    } catch {
-      setError('The liveness check could not start. Check your connection and try again.');
+    } catch (err) {
+      setError(errorText(err instanceof IdentityApiError ? err.message : 'request_failed'));
     } finally {
       setBusy(false);
     }
@@ -156,7 +158,7 @@ const IdentityVerificationStep = () => {
 
   const handleLivenessDone = useCallback((outcome: LivenessOutcome) => {
     setLiveness(null);
-    if (outcome.type === 'error') setError(reasonMessage(outcome.code));
+    if (outcome.type === 'error') setError(errorText(outcome.code, outcome.message));
     if (token) fetchIdentityStatus({ baseUrl, token }).then(setStatus).catch(() => setLoadAttempt((n) => n + 1));
   }, [baseUrl, token]);
 
@@ -167,9 +169,12 @@ const IdentityVerificationStep = () => {
     setError('');
     try {
       const image = await captureFrame(video);
-      setStatus(await verifySelfie({ baseUrl, token, image }));
-    } catch {
-      setError('Your photo could not be uploaded. Check your connection and try again.');
+      const signals = cameraSignals(streamRef.current?.getVideoTracks()[0]?.label);
+      setStatus(await verifySelfie({
+        baseUrl, token, image, signals,
+      }));
+    } catch (err) {
+      setError(errorText(err instanceof IdentityApiError ? err.message : 'upload_failed'));
     } finally {
       setBusy(false);
     }

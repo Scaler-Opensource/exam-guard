@@ -80,12 +80,12 @@ export const uploadSelfie = async ({
 };
 
 export const submitSelfie = async ({
-  baseUrl, token, fileName, idempotencyKey,
-}: Session & { fileName: string; idempotencyKey: string }): Promise<IdentityStatus> => {
+  baseUrl, token, fileName, idempotencyKey, signals,
+}: Session & { fileName: string; idempotencyKey: string; signals?: CameraSignals }): Promise<IdentityStatus> => {
   const data = await request(`${baseUrl}/api/v1/proctoring/identity/verifications`, {
     token,
     method: 'POST',
-    body: { file_name: fileName, idempotency_key: idempotencyKey },
+    body: { file_name: fileName, idempotency_key: idempotencyKey, signals },
   });
   return data.identity;
 };
@@ -98,15 +98,15 @@ const newIdempotencyKey = (): string => (
 // A rejected submission (already verified, one in progress, attempts exhausted) still carries
 // the current status, which is what the step should render.
 export const verifySelfie = async ({
-  baseUrl, token, image, now = Date.now(), idempotencyKey = newIdempotencyKey(),
-}: Session & { image: Blob; now?: number; idempotencyKey?: string }): Promise<IdentityStatus> => {
+  baseUrl, token, image, now = Date.now(), idempotencyKey = newIdempotencyKey(), signals,
+}: Session & { image: Blob; now?: number; idempotencyKey?: string; signals?: CameraSignals }): Promise<IdentityStatus> => {
   const fileName = `identity_${now}.jpeg`;
   await uploadSelfie({
     baseUrl, token, image, fileName,
   });
   try {
     return await submitSelfie({
-      baseUrl, token, fileName, idempotencyKey,
+      baseUrl, token, fileName, idempotencyKey, signals,
     });
   } catch (error) {
     if (error instanceof IdentityApiError && error.identity) return error.identity;
@@ -123,4 +123,11 @@ export const requestLivenessNonce = async ({
     body: { signals },
   });
   return { nonce: data.nonce, livenessUrl: data.liveness_url };
+};
+
+// Reports a camera switch during the test; recorded by the service, never blocks the candidate.
+export const reportCameraChange = async ({
+  baseUrl, token, signals,
+}: Session & { signals: CameraSignals }): Promise<void> => {
+  await request(`${baseUrl}/api/v1/proctoring/identity/camera_signals`, { token, method: 'POST', body: { signals } });
 };

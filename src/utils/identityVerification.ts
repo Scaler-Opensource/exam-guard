@@ -59,7 +59,18 @@ const REASON_MESSAGES: Record<string, string> = {
   liveness_no_frame: "The liveness check couldn't capture your face. Face the camera and try again.",
   engine_capacity: 'Many candidates are verifying right now. Please try again in a moment.',
   virtual_camera: 'A virtual camera is selected. Choose your physical webcam to continue.',
+  liveness_in_progress: 'Another liveness check is already running for this test. Close it and try again.',
+  liveness_not_enabled: 'This test does not use the liveness check.',
+  engine_unavailable: 'The verification service is unavailable right now. Please try again in a moment.',
+  unknown_liveness_session: 'This check expired. Start it again.',
+  request_failed: 'The request failed. Check your connection and try again.',
+  upload_failed: "Your photo didn't upload. Check your connection and try again.",
 };
+
+// A candidate-facing message with the code support can match to the server logs.
+export const errorText = (code: string, message?: string): string => (
+  `${message || reasonMessage(code)} (Error code: ${code})`
+);
 
 export const isLivenessOn = (status: IdentityStatus | null | undefined): boolean => (
   Boolean(status?.liveness) && status!.liveness!.mode !== 'off'
