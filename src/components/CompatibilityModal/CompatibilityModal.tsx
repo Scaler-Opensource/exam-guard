@@ -12,6 +12,7 @@ import { Modal } from '@/ui/Modal';
 import { Step, WorkflowStepKey } from '@/types/workflowTypes';
 import { useAppSelector } from '@/hooks/reduxhooks';
 import { evaluateParentStepStatus } from '@/utils/evaluateParentStepStatus';
+import { STEP_ORDER } from '@/utils/stepOrder';
 import CompatibilityModalHeader from '@/components/CompatibilityModalHeader';
 import CompatibilityModalStepsScreen from '@/components/CompatibilityModalStepsScreen';
 import DesktopCameraStep from '@/components/DesktopCameraStep';
@@ -62,10 +63,10 @@ export default function CompatibilityModal() {
   const [timer, setTimer] = useState(3);
 
   const enabledSteps = useMemo(() => {
-    return Object.entries(ALL_STEPS).reduce(
-      (acc, [key, step]) => {
-        if (steps[key as WorkflowStepKey]?.enabled) {
-          acc[key] = step;
+    return STEP_ORDER.reduce(
+      (acc, key) => {
+        if (steps[key]?.enabled) {
+          acc[key] = ALL_STEPS[key];
         }
         return acc;
       },

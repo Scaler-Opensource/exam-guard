@@ -14,6 +14,7 @@ import {
 import { PAIRING_STEPS } from '@/utils/constants';
 import { Tabs, Tab } from '@/ui/Tabs';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
+import { useStepNumber } from '@/hooks/useStepNumber';
 import MobileCompatibility from './MobileCompatibility';
 import Orientation from './Orientation';
 import Pairing from './Pairing';
@@ -29,6 +30,7 @@ const MemoizedSwitchPhoneModal = React.memo(SwitchPhoneModal);
 const MobileCameraStep = () => {
   console.log('MobileCameraStep component rendered');
   const dispatch = useAppDispatch();
+  const stepNumber = useStepNumber('mobileCameraShare');
   const {
     acknowledged, subSteps, activeSubStep,
   } = useAppSelector((state) => (
@@ -70,7 +72,7 @@ const MobileCameraStep = () => {
   return (
     <>
       <StepHeader
-        stepNumber='3'
+        stepNumber={stepNumber}
         title='Mobile Camera Pairing Permissions'
         status={status}
       />

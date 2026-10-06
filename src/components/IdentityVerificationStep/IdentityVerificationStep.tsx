@@ -1,5 +1,5 @@
 import React, {
-  useCallback, useEffect, useMemo, useRef, useState,
+  useCallback, useEffect, useRef, useState,
 } from 'react';
 import { ArrowRight, Camera } from 'lucide-react';
 
@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button';
 import Loader from '@/ui/Loader';
 import StepHeader from '@/ui/StepHeader';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
+import { useStepNumber } from '@/hooks/useStepNumber';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { nextStep, setSubStepStatus } from '@/store/features/workflowSlice';
 import {
@@ -46,7 +47,6 @@ const IdentityVerificationStep = () => {
   const proctor = useAppSelector(selectProctor);
   const token = useAppSelector((state) => state.assessmentInfo.token);
   const policy = useAppSelector((state) => state.assessmentInfo.identity);
-  const steps = useAppSelector((state) => state.workflow.steps);
   const baseUrl = proctor?.baseUrl ?? '';
 
   const [status, setStatus] = useState<IdentityStatus | null>(null);
@@ -59,12 +59,7 @@ const IdentityVerificationStep = () => {
   const [liveness, setLiveness] = useState<{ url: string; nonce: string } | null>(null);
 
   const view = identityView(status);
-  const stepNumber = useMemo(
-    () => (Object.keys(steps) as WorkflowStepKey[])
-      .filter((key) => steps[key].enabled)
-      .indexOf(STEP) + 1,
-    [steps],
-  );
+  const stepNumber = useStepNumber(STEP);
 
   useEffect(() => {
     if (!token || !baseUrl) return undefined;
@@ -188,7 +183,7 @@ const IdentityVerificationStep = () => {
 
   return (
     <>
-      <StepHeader stepNumber={String(stepNumber)} title={view.title} status={view.tone} />
+      <StepHeader stepNumber={stepNumber} title={view.title} status={view.tone} />
       <div className='mt-16 max-w-3xl'>
         {view.message && <p className='text-base text-base-500'>{view.message}</p>}
 

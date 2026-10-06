@@ -10,6 +10,7 @@ import { nextStep, setStepAcknowledged, selectSubStep, selectStep } from '@/stor
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { SubStepState } from '@/types/workflowTypes';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
+import { useStepNumber } from '@/hooks/useStepNumber';
 import CameraCard from '@/ui/CameraCard';
 import CameraShareGuide from '@/ui/CameraShareGuide';
 import GuideModal from '@/ui/GuideModal';
@@ -17,6 +18,7 @@ import StepHeader from '@/ui/StepHeader';
 
 const DesktopCameraStep = () => {
   const dispatch = useAppDispatch();
+  const stepNumber = useStepNumber('cameraShare');
   const { acknowledged, subSteps } = useAppSelector((state) =>
     selectStep(state, 'cameraShare'),
   );
@@ -79,7 +81,7 @@ const DesktopCameraStep = () => {
   return (
     <>
       <StepHeader
-        stepNumber='2'
+        stepNumber={stepNumber}
         title='Desktop/Laptop Camera Permissions'
         status={status}
       />
