@@ -9,19 +9,37 @@ module.exports = {
       name: 'Proctor',
       type: 'umd',
       umdNamedDefine: true,
-      export: 'default', // Ensure default export is used
+      export: 'default',
     },
     globalObject: 'this',
   },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.worker\.js$/,
+        use: {
+          loader: 'worker-loader',
+          options: {
+            filename: '[name].js',
+          },
+        },
+      },
+      {
+        test: /\.(ts|tsx)$/,
+        exclude: /node_modules/,
+        use: 'ts-loader',
+      },
+      {
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env'],
+            presets: [
+              '@babel/preset-react',
+              '@babel/preset-env',
+              '@babel/preset-typescript',
+            ],
           },
         },
       },
@@ -30,13 +48,6 @@ module.exports = {
         type: 'asset/resource',
         generator: {
           filename: 'images/[name][hash][ext]',
-        },
-      },
-      {
-        test: /\.wav$/,
-        type: 'asset/resource',
-        generator: {
-          filename: 'assets/audio/[name][hash][ext]', // Specify where to store the .wav files in the output folder
         },
       },
       {
@@ -65,14 +76,44 @@ module.exports = {
       },
       {
         test: /\.scss$/,
+        exclude: /\.module\.scss$/,
+        include: path.resolve(__dirname, 'src/assets/styles'),
+        use: ['style-loader', 'css-loader', 'sass-loader'],
+      },
+      {
+        test: /\.module\.scss$/,
         use: [
           'style-loader',
-          'css-loader', // Translates CSS into CommonJS
-          'sass-loader', // Compiles Sass to CSS
+          {
+            loader: 'css-loader',
+            options: {
+              modules: {
+                localIdentName: '[name]__[local]___[hash:base64:5]',
+                namedExport: false,
+              },
+              sourceMap: true,
+            },
+          },
+          'sass-loader',
+          'postcss-loader',
         ],
-        include: path.resolve(__dirname, 'src/assets/styles'),
+        include: path.resolve(__dirname, 'src'),
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
+      },
+      {
+        test: /\.md$/,
+        use: 'raw-loader',
       },
     ],
+  },
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
   },
   mode: 'production',
   devServer: {
