@@ -18,7 +18,8 @@ import {
   IdentityStatus, errorText, isLivenessOn, pollDelayMs,
 } from '@/utils/identityVerification';
 import {
-  CAPTURE_COPY, CONSENT_COPY, CONSENT_VERSION, VERIFIED_CONFIRMATION, identityScreen,
+  CAPTURE_COPY, CONSENT_COPY, CONSENT_VERSION, LIVENESS_TIPS, PHOTOSENSITIVITY_NOTE, VERIFIED_CONFIRMATION,
+  identityScreen, startsLivenessAfterConsent,
 } from '@/utils/identityScreen';
 import { CameraSignals, cameraSignals } from '@/utils/cameraIntegrity';
 import { WorkflowStepKey } from '@/types/workflowTypes';
@@ -148,9 +149,9 @@ const IdentityVerificationStep = () => {
     deviceLabel(stepDeviceId).then(setPreviousLabel).catch(() => setPreviousLabel(''));
   }, [stepDeviceId]);
 
-  // The camera is held only while the candidate can capture, and released while the liveness
-  // page has it: some drivers won't open one camera twice.
-  const capturing = state === 'capture' && !liveness;
+  // The camera preview is only for the selfie path. With liveness, the liveness page opens the
+  // camera itself, and some drivers won't open one camera twice.
+  const capturing = state === 'capture' && !livenessOn;
   useEffect(() => {
     if (!capturing) return undefined;
     let stream: MediaStream | null = null;
@@ -177,7 +178,7 @@ const IdentityVerificationStep = () => {
   }, [capturing, stepDeviceId]);
 
   const currentSignals = (): CameraSignals => ({
-    ...cameraSignals(streamRef.current?.getVideoTracks()[0]?.label),
+    ...cameraSignals(streamRef.current?.getVideoTracks()[0]?.label ?? previousLabel),
     previous_camera_label: previousLabel || undefined,
   });
 
@@ -189,16 +190,21 @@ const IdentityVerificationStep = () => {
     if (!token) return;
     setBusy(true);
     setError('');
+    let identity: IdentityStatus;
     try {
-      applyStatus(await recordConsent({ baseUrl, token, version: CONSENT_VERSION }));
+      identity = await recordConsent({ baseUrl, token, version: CONSENT_VERSION });
+      applyStatus(identity);
     } catch (err) {
       setError(errorText(err instanceof IdentityApiError ? err.message : 'request_failed'));
-    } finally {
       setBusy(false);
+      return;
     }
+    setBusy(false);
+    // Start was the candidate's go-ahead, so the liveness check opens without another click.
+    if (startsLivenessAfterConsent(identity, policy)) startLiveness();
   };
 
-  const handleStartLiveness = async () => {
+  async function startLiveness() {
     if (!token) return;
     const signals = currentSignals();
     if (signals.virtual_camera && policy?.camera_integrity?.mode === 'required') {
@@ -217,7 +223,7 @@ const IdentityVerificationStep = () => {
     } finally {
       setBusy(false);
     }
-  };
+  }
 
   const handleLivenessDone = useCallback((outcome: LivenessOutcome) => {
     setLiveness(null);
@@ -245,6 +251,7 @@ const IdentityVerificationStep = () => {
   const handleRetry = () => {
     setError('');
     setRetrying(true);
+    if (livenessOn) startLiveness();
   };
 
   const handleContinue = () => dispatch(nextStep());
@@ -286,13 +293,13 @@ const IdentityVerificationStep = () => {
   let card: React.ReactNode = null;
   let footer: React.ReactNode = null;
   if (state === 'consent') {
-    card = <ConsentCard baseUrl={baseUrl} onOpenGuide={openGuide} />;
+    card = <ConsentCard baseUrl={baseUrl} livenessOn={livenessOn} onOpenGuide={openGuide} />;
     footer = (
       <>
         {checkboxRow('identity-consent', agreed, setAgreed, CONSENT_COPY.checkbox)}
         <div className='mt-8 flex items-center gap-6'>
           <Button variant='primary' size='lg' className='items-center gap-3' disabled={!agreed || busy} onClick={handleConsent}>
-            Start face check
+            {busy ? 'Starting…' : 'Start face check'}
             <ArrowRight className='w-6 h-6' />
           </Button>
           <Button variant='outline' size='lg' onClick={() => setDeclined(true)}>I do not agree</Button>
@@ -301,30 +308,56 @@ const IdentityVerificationStep = () => {
         {error && <p className='mt-4 text-sm text-red-500'>{error}</p>}
       </>
     );
+  } else if (state === 'capture' && livenessOn) {
+    card = liveness ? (
+      <IdentityCard banner={error}>
+        <LivenessFrame url={liveness.url} nonce={liveness.nonce} onDone={handleLivenessDone} className='h-[60rem] w-full' />
+        <p className='mt-3 text-center text-sm text-base-500'>{CAPTURE_COPY.caption}</p>
+      </IdentityCard>
+    ) : (
+      <IdentityCard banner={error}>
+        <Split>
+          <IllustrationPanel tone='info' baseUrl={baseUrl} />
+          <div>
+            <PanelHeading title={busy ? 'Opening the face check…' : 'Ready for your face check'} />
+            <ul className='mt-4 list-disc space-y-1 pl-5 text-base leading-relaxed text-base-500'>
+              {LIVENESS_TIPS.map((tip) => <li key={tip}>{tip}</li>)}
+            </ul>
+            <p className='mt-4 rounded-md bg-scaler-100 px-4 py-3 text-sm text-base-700'>{PHOTOSENSITIVITY_NOTE}</p>
+          </div>
+        </Split>
+      </IdentityCard>
+    );
+    footer = !liveness && (
+      <div className='flex items-center gap-6'>
+        <Button variant='primary' size='lg' className='items-center gap-3' disabled={busy} onClick={startLiveness}>
+          {busy ? 'Starting…' : 'Start face check'}
+          <ArrowRight className='w-6 h-6' />
+        </Button>
+        {guideButton}
+        {continueButton('Continue without verifying')}
+      </div>
+    );
   } else if (state === 'capture') {
     card = (
       <IdentityCard banner={error}>
         <TwoColumns>
           <div>
-            {liveness ? (
-              <LivenessFrame url={liveness.url} nonce={liveness.nonce} onDone={handleLivenessDone} className='h-[52rem] w-full' />
-            ) : (
-              <CameraFrame ring={cameraReady ? 'framed' : 'searching'} pill={CAPTURE_COPY.pill} live>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  onLoadedData={() => setCameraReady(true)}
-                  className='h-full w-full object-cover'
-                  style={{ transform: 'scale(-1, 1)' }}
-                />
-              </CameraFrame>
-            )}
+            <CameraFrame ring={cameraReady ? 'framed' : 'searching'} pill={CAPTURE_COPY.pill} live>
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                onLoadedData={() => setCameraReady(true)}
+                className='h-full w-full object-cover'
+                style={{ transform: 'scale(-1, 1)' }}
+              />
+            </CameraFrame>
             <p className='mt-3 text-center text-sm text-base-500'>{CAPTURE_COPY.caption}</p>
           </div>
-          <IdlePanel spinner={!cameraReady || Boolean(liveness)}>
-            {liveness ? CAPTURE_COPY.running : (cameraReady ? CAPTURE_COPY.ready : CAPTURE_COPY.waiting)}
+          <IdlePanel spinner={!cameraReady}>
+            {cameraReady ? CAPTURE_COPY.ready : CAPTURE_COPY.waiting}
           </IdlePanel>
         </TwoColumns>
       </IdentityCard>
@@ -332,8 +365,8 @@ const IdentityVerificationStep = () => {
     footer = capturing && (
       <div className='flex items-center gap-6'>
         <Button variant='primary' size='lg' className='items-center gap-3' disabled={!cameraReady || busy}
-          onClick={livenessOn ? handleStartLiveness : handleCapture}>
-          {busy ? 'Starting…' : 'Start face check'}
+          onClick={handleCapture}>
+          {busy ? 'Checking…' : 'Start face check'}
           <ArrowRight className='w-6 h-6' />
         </Button>
         {guideButton}
@@ -343,22 +376,22 @@ const IdentityVerificationStep = () => {
   } else if (state === 'analysing') {
     card = (
       <IdentityCard>
-        <TwoColumns>
-          <CameraFrame ring='framed' />
+        <Split>
+          <IllustrationPanel tone='info' baseUrl={baseUrl} />
           <IdlePanel>{screen.title}</IdlePanel>
-        </TwoColumns>
+        </Split>
       </IdentityCard>
     );
   } else if (state === 'verified' || state === 'captured') {
     card = (
       <IdentityCard>
-        <TwoColumns>
-          <CameraFrame ring='done' />
+        <Split>
+          <IllustrationPanel tone='success' baseUrl={baseUrl} />
           <div>
             <PanelHeading title={screen.title} sub={screen.body} done />
             <CheckRows rows={rows} />
           </div>
-        </TwoColumns>
+        </Split>
       </IdentityCard>
     );
     footer = (
@@ -373,14 +406,14 @@ const IdentityVerificationStep = () => {
   } else if (state === 'attempt_failed') {
     card = (
       <IdentityCard banner={error || screen.banner}>
-        <TwoColumns>
-          <CameraFrame ring='failed' pill='This attempt did not work' pillTone='error' />
+        <Split>
+          <IllustrationPanel tone='error' baseUrl={baseUrl} />
           <div>
             <PanelHeading title={screen.title} sub={screen.body} />
             <FixBox tip={screen.tip} onOpenGuide={openGuide} />
             {screen.attemptsLeft != null && <InfoRow label='Attempts left' value={screen.attemptsLeft} />}
           </div>
-        </TwoColumns>
+        </Split>
       </IdentityCard>
     );
     footer = (
