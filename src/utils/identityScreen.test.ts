@@ -1,5 +1,7 @@
 import { IdentityStatus } from '@/utils/identityVerification';
-import { failureBanner, identityScreen, startsLivenessAfterConsent } from '@/utils/identityScreen';
+import {
+  failureBanner, identityScreen, rechecksWhileBlocked, startsLivenessAfterConsent,
+} from '@/utils/identityScreen';
 
 const consented = { required: true, given: true, version: '2026-10-06' };
 const status = (overrides: Partial<IdentityStatus>): IdentityStatus => ({
@@ -63,6 +65,23 @@ describe('identityScreen', () => {
     expect(blocked).toMatchObject({ state: 'service_error', tone: 'pending', canRetry: true, canProceed: false, attemptsUsed: 0 });
     expect(blocked.body).toMatch(/not your mistake/);
     expect(identityScreen(status({ status: 'engine_error', allowed: true })).canProceed).toBe(true);
+  });
+});
+
+describe('manual override', () => {
+  it('shows the exam team confirmation, and never claims a face match', () => {
+    const s = identityScreen(status({ status: 'manually_verified', allowed: true, reason: 'manual_override' }), policy);
+    expect(s).toMatchObject({
+      state: 'manually_verified', tone: 'completed', title: 'Your identity was confirmed by the exam team', canProceed: true,
+    });
+    expect(s.body).not.toMatch(/match/i);
+  });
+
+  it('keeps checking while blocked or during an outage, so an override arrives without a reload', () => {
+    expect(rechecksWhileBlocked('blocked')).toBe(true);
+    expect(rechecksWhileBlocked('service_error')).toBe(true);
+    expect(rechecksWhileBlocked('attempt_failed')).toBe(false);
+    expect(rechecksWhileBlocked('manually_verified')).toBe(false);
   });
 });
 

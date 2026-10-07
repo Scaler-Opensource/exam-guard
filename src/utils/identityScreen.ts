@@ -38,7 +38,7 @@ export const CAPTURE_COPY = {
 };
 
 export type IdentityScreenState =
-  | 'loading' | 'skip' | 'consent' | 'capture' | 'analysing' | 'verified' | 'captured'
+  | 'loading' | 'skip' | 'consent' | 'capture' | 'analysing' | 'verified' | 'captured' | 'manually_verified'
   | 'attempt_failed' | 'blocked' | 'service_error';
 
 export interface IdentityScreen {
@@ -117,6 +117,13 @@ export const startsLivenessAfterConsent = (
   policy?: IdentityPolicy | null,
 ): boolean => isLivenessOn(status) && identityScreen(status, policy).state === 'capture';
 
+// Blocked and outage screens re-check on this interval, so an admin's manual override reaches the
+// candidate without a reload.
+export const BLOCKED_RECHECK_MS = 10000;
+export const rechecksWhileBlocked = (state: IdentityScreenState): boolean => (
+  state === 'blocked' || state === 'service_error'
+);
+
 export const identityScreen = (
   status: IdentityStatus | null | undefined,
   policy?: IdentityPolicy | null,
@@ -124,6 +131,15 @@ export const identityScreen = (
   if (!status) return screen('loading');
   if (status.status === 'not_required' || status.status === 'skipped') {
     return screen('skip', { tone: 'completed', title: 'Identity verification not needed', canProceed: true });
+  }
+  // An admin confirmed the candidate after a block; no face match happened, so nothing claims one.
+  if (status.status === 'manually_verified') {
+    return screen('manually_verified', {
+      tone: 'completed',
+      title: 'Your identity was confirmed by the exam team',
+      body: 'A member of the exam team checked that it is you, so you can continue to the next step.',
+      canProceed: true,
+    });
   }
   if (status.consent?.required && !status.consent.given) {
     return screen('consent', { title: CONSENT_COPY.title, body: CONSENT_COPY.body });
