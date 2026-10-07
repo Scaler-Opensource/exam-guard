@@ -1,0 +1,185 @@
+.proctor-library-root {
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 47.4% 11.2%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 47.4% 11.2%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 215 20.2% 65.1%;
+  --radius: 0.5rem;
+
+
+  border-color: var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: SourceSansPro, sans-serif !important;
+  font-size: 10px;
+}
+
+
+
+
+.proctor-library-root * {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  font-family: SourceSansPro, sans-serif !important;
+}
+
+
+.proctor-library-root .markdown-content {
+  color: #1a1a1a;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.proctor-library-root .markdown-content h1,
+.proctor-library-root .markdown-content h2,
+.proctor-library-root .markdown-content h3,
+.proctor-library-root .markdown-content h4,
+.proctor-library-root .markdown-content h5,
+.proctor-library-root .markdown-content h6 {
+  margin: 1em 0;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #111;
+}
+
+.proctor-library-root .markdown-content h1 {
+  font-size: 2em;
+  border-bottom: 2px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.proctor-library-root .markdown-content h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.proctor-library-root .markdown-content h3 {
+  font-size: 1.25em;
+}
+
+.proctor-library-root .markdown-content h4 {
+  font-size: 1em;
+}
+
+.proctor-library-root .markdown-content h5 {
+  font-size: 0.875em;
+}
+
+.proctor-library-root .markdown-content h6 {
+  font-size: 0.85em;
+  color: #6a737d;
+}
+
+/* Paragraphs */
+.proctor-library-root .markdown-content p {
+  margin: 1em 0;
+  line-height: 1.75;
+}
+
+/* Lists */
+.proctor-library-root .markdown-content ul,
+.proctor-library-root .markdown-content ol {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+.proctor-library-root .markdown-content li {
+  margin: 0.5em 0;
+  list-style-type: disc;
+}
+
+.proctor-library-root .markdown-content li::marker {
+  color: #6a737d;
+}
+
+.proctor-library-root .markdown-content li p {
+  margin: 0.5em 0;
+}
+
+.proctor-library-root .markdown-content li ul,
+.proctor-library-root .markdown-content li ol {
+  margin: 0.5em 0;
+}
+
+/* Definition lists */
+.proctor-library-root .markdown-content dl {
+  margin: 1em 0;
+}
+
+.proctor-library-root .markdown-content dt {
+  font-weight: 600;
+  margin-top: 1em;
+}
+
+.proctor-library-root .markdown-content dd {
+  margin-left: 2em;
+  margin-top: 0.5em;
+}
+
+.proctor-library-root .markdown-content blockquote {
+  margin: 1.5em 0;
+  padding: 0.5em 1.5em;
+  border-left: 4px solid #60a5fa;
+  background-color: #f8fafc;
+  color: #4a5568;
+}
+
+.proctor-library-root .markdown-content blockquote p {
+  margin: 0.5em 0;
+}
+
+.proctor-library-root .markdown-content blockquote p:first-child {
+  margin-top: 0;
+}
+
+.proctor-library-root .markdown-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.proctor-library-root .markdown-content blockquote blockquote {
+  border-left-color: #93c5fd;
+  background-color: #f1f5f9;
+}
+
+.proctor-library-root .markdown-content a {
+  color: #2563eb;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.proctor-library-root .markdown-content a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.proctor-library-root .markdown-content a:visited {
+  color: #7c3aed;
+}
+
+.proctor-library-root .markdown-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 1.5em 0;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%);
+}
