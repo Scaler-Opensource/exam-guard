@@ -1,6 +1,6 @@
 const resizeImage = (imageSrc, resizeOptions) => new Promise(
   (resolve, reject) => {
-    const { width, height } = resizeOptions;
+    const { width, height } = resizeOptions; // Default quality to 0.7 (adjustable)
 
     // Create a new image object
     const img = new Image();
@@ -18,18 +18,22 @@ const resizeImage = (imageSrc, resizeOptions) => new Promise(
       // Draw the image on the canvas
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Get the resized image data
-      const resizedImageData = canvas.toDataURL('image/png');
+      // Convert the resized image to a blob with compression
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create blob'));
+          }
+        },
+        'image/jpeg', // Use JPEG for smaller file size
+        0.7, // Compression quality
+      );
+    };
 
-      // Convert the resized image data to a blob
-      fetch(resizedImageData)
-        .then((res) => res.blob())
-        .then((blob) => {
-          resolve(blob);
-        })
-        .catch((err) => {
-          reject(err);
-        });
+    img.onerror = () => {
+      reject(new Error('Failed to load image'));
     };
   },
 );
