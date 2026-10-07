@@ -25,6 +25,9 @@ describe('reasonMessage', () => {
     expect(reasonMessage('engine_access_denied')).toBe('The verification service is unavailable right now.');
     expect(reasonMessage('something_new')).toBe('Please try again.');
     expect(reasonMessage(null)).toBe('Please try again.');
+    expect(reasonMessage('engine_throttled')).toMatch(/Many candidates are verifying/);
+    expect(reasonMessage('engine_misconfigured')).toBe('The verification service is unavailable right now.');
+    expect(reasonMessage('no_face')).toMatch(/couldn't find a face/);
   });
 });
 
