@@ -1,0 +1,48 @@
+name: Release
+
+# Publishes @exam_guard/core when a version tag (v1.2.3) is pushed, e.g. by `npm run release:patch`.
+# Uses npm trusted publishing (OIDC): no npm token is stored, and npm adds build provenance.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - run: npm install -g npm@^11.5.1
+
+      - name: Tag matches package.json version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match package.json version ${version}" >&2
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Publish
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          # Pre-releases (10.1.0-rc.1) must not move `latest`.
+          if [[ "${version}" == *-* ]]; then tag=next; else tag=latest; fi
+          npm publish --tag "${tag}"
