@@ -1,12 +1,22 @@
 # exam-guard
 AI Proctoring tool developed by Scaler
 
+Published on npm as [`@exam_guard/core`](https://www.npmjs.com/package/@exam_guard/core) (formerly `exam-guard`, which no longer receives releases).
+
+## Releasing
+
+Releases are published by GitHub Actions (`.github/workflows/release.yml`) using npm trusted publishing, so no npm token is stored.
+
+1. On an up-to-date `main`, run `npm run release:patch` (or `release:minor` / `release:major`). This bumps the version, commits, tags `vX.Y.Z` and pushes.
+2. The tag triggers the workflow: it checks the tag matches `package.json`, runs `npm ci && npm run build`, and publishes with provenance. Pre-release versions (`10.1.0-rc.1`) go to the `next` dist-tag, not `latest`.
+3. Consumers load it from jsDelivr: `https://cdn.jsdelivr.net/npm/@exam_guard/core@<version>/dist/proctor.js`.
+
 # Instructions for installation
 
 Clone the repository
 
 ```
-https://github.com/aswanth9495/exam-guard.git
+https://github.com/Scaler-Opensource/exam-guard.git
 ```
 
 Run NPM install
@@ -504,7 +514,8 @@ The proctoring library is designed to work across modern browsers. However, to e
   </div>
 
   <!-- Include the Webpack bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/exam-guard@latest/dist/proctor.js"></script>
+  <!-- Pin an exact version in production; @latest can change under a running test. -->
+  <script src="https://cdn.jsdelivr.net/npm/@exam_guard/core@10.0.5/dist/proctor.js"></script>
 
   <script>
     const proctor = new Proctor({
