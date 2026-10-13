@@ -24,6 +24,12 @@ describe('identityScreen', () => {
     expect(identityScreen(status({ status: 'verified', allowed: true }))).toMatchObject({ state: 'verified', tone: 'completed', canProceed: true });
   });
 
+  it('completes without claiming a match when there was no reference photo to match', () => {
+    const s = identityScreen(status({ status: 'captured', allowed: true, reason: 'no_reference_image' }));
+    expect(s).toMatchObject({ state: 'captured', tone: 'completed', title: 'Check complete', canProceed: true });
+    expect(s.body).toMatch(/matched with your Scaler record once/);
+  });
+
   it('shows the specific reason and the next attempt after a failure (S6)', () => {
     const s = identityScreen(status({ status: 'retry', reason: 'mismatch', attempts_remaining: 2 }), policy);
     expect(s).toMatchObject({

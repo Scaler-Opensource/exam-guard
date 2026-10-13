@@ -16,7 +16,7 @@ export const VERIFIED_CONFIRMATION = 'By clicking, you confirm that the person t
   + 'Misrepresentation may result in disqualification.';
 
 export type IdentityScreenState =
-  | 'loading' | 'skip' | 'consent' | 'capture' | 'analysing' | 'verified'
+  | 'loading' | 'skip' | 'consent' | 'capture' | 'analysing' | 'verified' | 'captured'
   | 'attempt_failed' | 'blocked' | 'service_error';
 
 export interface IdentityScreen {
@@ -87,6 +87,14 @@ export const identityScreen = (
       return screen('analysing', { title: 'Verifying your identity...' });
     case 'verified':
       return screen('verified', { tone: 'completed', title: 'Identity verified', canProceed: true });
+    case 'captured':
+      // No reference photo yet: the check is recorded and matched later, so nothing is claimed as matched.
+      return screen('captured', {
+        tone: 'completed',
+        title: 'Check complete',
+        body: "Your check is recorded. It will be matched with your Scaler record once your photo is on file.",
+        canProceed: true,
+      });
     case 'retry':
       return screen('attempt_failed', {
         tone: 'error',
