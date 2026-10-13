@@ -18,8 +18,8 @@ import {
   IdentityStatus, errorText, isLivenessOn, pollDelayMs,
 } from '@/utils/identityVerification';
 import {
-  CAPTURE_COPY, CONSENT_COPY, CONSENT_VERSION, LIVENESS_TIPS, PHOTOSENSITIVITY_NOTE, VERIFIED_CONFIRMATION,
-  identityScreen, startsLivenessAfterConsent,
+  BLOCKED_RECHECK_MS, CAPTURE_COPY, CONSENT_COPY, CONSENT_VERSION, LIVENESS_TIPS, PHOTOSENSITIVITY_NOTE,
+  VERIFIED_CONFIRMATION, identityScreen, rechecksWhileBlocked, startsLivenessAfterConsent,
 } from '@/utils/identityScreen';
 import { CameraSignals, cameraSignals } from '@/utils/cameraIntegrity';
 import { WorkflowStepKey } from '@/types/workflowTypes';
@@ -127,6 +127,15 @@ const IdentityVerificationStep = () => {
       clearTimeout(timer);
     };
   }, [baseUrl, token, status, applyStatus]);
+
+  // While blocked, keep checking: an admin may confirm the candidate from the dashboard.
+  useEffect(() => {
+    if (!token || !rechecksWhileBlocked(state)) return undefined;
+    const timer = setInterval(() => {
+      fetchIdentityStatus({ baseUrl, token }).then(applyStatus).catch(() => {});
+    }, BLOCKED_RECHECK_MS);
+    return () => clearInterval(timer);
+  }, [baseUrl, token, state, applyStatus]);
 
   useEffect(() => {
     dispatch(setSubStepStatus({
@@ -403,6 +412,24 @@ const IdentityVerificationStep = () => {
         </Button>
       </>
     );
+  } else if (state === 'manually_verified') {
+    card = (
+      <IdentityCard>
+        <Split>
+          <IllustrationPanel tone='success' baseUrl={baseUrl} />
+          <PanelHeading title={screen.title} sub={screen.body} done />
+        </Split>
+      </IdentityCard>
+    );
+    footer = (
+      <>
+        {checkboxRow('identity-confirm', confirmed, setConfirmed, VERIFIED_CONFIRMATION)}
+        <Button variant='primary' size='lg' className='mt-8 items-center gap-3' disabled={!confirmed} onClick={handleContinue}>
+          Next step
+          <ArrowRight className='w-6 h-6' />
+        </Button>
+      </>
+    );
   } else if (state === 'attempt_failed') {
     card = (
       <IdentityCard banner={error || screen.banner}>
@@ -438,6 +465,9 @@ const IdentityVerificationStep = () => {
         </Split>
       </IdentityCard>
     );
+    footer = (
+      <Button variant='outline' size='lg' onClick={refreshStatus}>Check again</Button>
+    );
   } else if (state === 'service_error') {
     card = (
       <IdentityCard banner={screen.banner}>
@@ -453,6 +483,7 @@ const IdentityVerificationStep = () => {
     footer = (
       <div className='flex items-center gap-6'>
         <Button variant='primary' size='lg' onClick={handleRetry}>Try again</Button>
+        <Button variant='outline' size='lg' onClick={refreshStatus}>Check again</Button>
         {continueButton()}
       </div>
     );
