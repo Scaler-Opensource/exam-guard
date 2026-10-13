@@ -1,7 +1,9 @@
 // Which DCP identity screen to show and its copy, derived from the proctoring service's status.
 // Wording follows the DCP prototype; facts follow this system (Face Liveness, 90-day retention).
 // Kept apart from the component so every state is unit tested.
-import { IdentityPolicy, IdentityStatus, reasonMessage } from '@/utils/identityVerification';
+import {
+  IdentityPolicy, IdentityStatus, isLivenessOn, reasonMessage,
+} from '@/utils/identityVerification';
 
 // Names the consent copy below; the proctoring service records which version was agreed to.
 export const CONSENT_VERSION = '2026-10-06';
@@ -15,6 +17,14 @@ export const CONSENT_COPY = {
   checkbox: 'I agree to a face check.',
   declined: 'You need to agree to the face check to take this test. If you have questions, contact support.',
 };
+
+// Shown on the consent screen when the check is a liveness check, which starts right after Start.
+export const LIVENESS_TIPS = [
+  'Sit in a well-lit place, facing the light.',
+  'Turn your screen brightness up.',
+  'Keep your face inside the oval and hold still until it finishes.',
+];
+export const PHOTOSENSITIVITY_NOTE = 'The screen flashes different colours during the check. Take care if you are sensitive to flashing light.';
 
 export const VERIFIED_CONFIRMATION = 'I confirm that I am the person taking this test. '
   + 'If this is not true, the exam team can cancel my test.';
@@ -100,6 +110,12 @@ const screen = (state: IdentityScreenState, fields: Partial<IdentityScreen> = {}
   canProceed: false,
   ...fields,
 });
+
+// After consent, Start opens the liveness check straight away when the next screen is the camera.
+export const startsLivenessAfterConsent = (
+  status: IdentityStatus,
+  policy?: IdentityPolicy | null,
+): boolean => isLivenessOn(status) && identityScreen(status, policy).state === 'capture';
 
 export const identityScreen = (
   status: IdentityStatus | null | undefined,

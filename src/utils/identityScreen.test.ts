@@ -1,5 +1,5 @@
 import { IdentityStatus } from '@/utils/identityVerification';
-import { failureBanner, identityScreen } from '@/utils/identityScreen';
+import { failureBanner, identityScreen, startsLivenessAfterConsent } from '@/utils/identityScreen';
 
 const consented = { required: true, given: true, version: '2026-10-06' };
 const status = (overrides: Partial<IdentityStatus>): IdentityStatus => ({
@@ -63,6 +63,23 @@ describe('identityScreen', () => {
     expect(blocked).toMatchObject({ state: 'service_error', tone: 'pending', canRetry: true, canProceed: false, attemptsUsed: 0 });
     expect(blocked.body).toMatch(/not your mistake/);
     expect(identityScreen(status({ status: 'engine_error', allowed: true })).canProceed).toBe(true);
+  });
+});
+
+describe('startsLivenessAfterConsent', () => {
+  const liveness = { mode: 'required' as const };
+
+  it('opens the liveness check straight after consent, without another click', () => {
+    expect(startsLivenessAfterConsent(status({ liveness } as Partial<IdentityStatus>), policy)).toBe(true);
+  });
+
+  it('waits on the selfie path, where the candidate captures from the preview', () => {
+    expect(startsLivenessAfterConsent(status({}), policy)).toBe(false);
+  });
+
+  it('does not start when consent leads somewhere other than the camera', () => {
+    expect(startsLivenessAfterConsent(status({ liveness, status: 'verified', allowed: true } as Partial<IdentityStatus>), policy)).toBe(false);
+    expect(startsLivenessAfterConsent(status({ liveness, status: 'failed', allowed: false } as Partial<IdentityStatus>), policy)).toBe(false);
   });
 });
 

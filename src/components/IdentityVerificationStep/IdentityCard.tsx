@@ -119,12 +119,15 @@ export const FixBox = ({ tip, onOpenGuide }: { tip: string; onOpenGuide: () => v
 );
 
 // The framed face illustration, tinted and badged by state.
-export const IllustrationPanel = ({ tone, baseUrl }: { tone: 'info' | 'error' | 'neutral'; baseUrl: string }) => {
-  const background = { info: 'bg-scaler-100', error: 'bg-red-100', neutral: 'bg-gray-100' }[tone];
+export const IllustrationPanel = ({ tone, baseUrl }: { tone: 'info' | 'success' | 'error' | 'neutral'; baseUrl: string }) => {
+  const background = {
+    info: 'bg-scaler-100', success: 'bg-green-50', error: 'bg-red-100', neutral: 'bg-gray-100',
+  }[tone];
   return (
     <div className={`flex items-center justify-center rounded-lg p-8 ${background}`}>
       <div className='relative rounded-lg bg-white p-4'>
         <img src={identityMedia(baseUrl, 'illus-hero.jpg')} alt='' className='block h-auto w-full max-w-[26rem] rounded-md' />
+        {tone === 'success' && <CircleCheck className='absolute bottom-3 right-3 h-12 w-12 rounded-full bg-white text-white fill-green-600' />}
         {tone === 'error' && <AlertTriangle className='absolute bottom-3 right-3 h-12 w-12 rounded-md bg-white p-1 text-red-500' />}
         {tone === 'neutral' && <CloudOff className='absolute bottom-3 right-3 h-12 w-12 rounded-md bg-white p-1 text-gray-500' />}
       </div>
