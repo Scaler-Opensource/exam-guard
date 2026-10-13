@@ -12,10 +12,11 @@ interface Props {
   nonce: string;
   traceparent?: string | null;
   onDone: (outcome: LivenessOutcome) => void;
+  className?: string;
 }
 
 const LivenessFrame = ({
-  url, nonce, traceparent, onDone,
+  url, nonce, traceparent, onDone, className = 'mt-8 w-full max-w-2xl h-[640px]',
 }: Props) => {
   const frame = useRef<HTMLIFrameElement>(null);
   const origin = new URL(url).origin;
@@ -47,7 +48,7 @@ const LivenessFrame = ({
       src={url}
       title='Liveness check'
       allow='camera'
-      className='mt-8 w-full max-w-2xl h-[640px] rounded-lg border border-base-200 bg-white'
+      className={`${className} rounded-lg border border-base-200 bg-white`}
     />
   );
 };

@@ -125,6 +125,14 @@ export const requestLivenessNonce = async ({
   return { nonce: data.nonce, livenessUrl: data.liveness_url };
 };
 
+// Records the candidate's agreement to the face scan; required before any capture.
+export const recordConsent = async ({
+  baseUrl, token, version,
+}: Session & { version: string }): Promise<IdentityStatus> => {
+  const data = await request(`${baseUrl}/api/v1/proctoring/identity/consent`, { token, method: 'POST', body: { version } });
+  return data.identity;
+};
+
 // Reports a camera switch during the test; recorded by the service, never blocks the candidate.
 export const reportCameraChange = async ({
   baseUrl, token, signals,
