@@ -1,19 +1,31 @@
-// Which DCP identity screen to show (PRD section 5) and its copy (section 7), derived from the
-// proctoring service's status. Kept apart from the component so every state is unit tested.
+// Which DCP identity screen to show and its copy, derived from the proctoring service's status.
+// Wording follows the DCP prototype; facts follow this system (Face Liveness, 90-day retention).
+// Kept apart from the component so every state is unit tested.
 import { IdentityPolicy, IdentityStatus, reasonMessage } from '@/utils/identityVerification';
 
 // Names the consent copy below; the proctoring service records which version was agreed to.
 export const CONSENT_VERSION = '2026-10-06';
 
 export const CONSENT_COPY = {
-  title: "Verify it's you",
-  body: "We'll scan your face and match it with the photo on your Scaler record. This takes about 20 seconds.",
-  retention: 'Your scan is stored securely for exam records and deleted after 90 days.',
-  checkbox: 'I agree to a face scan for identity verification.',
+  title: 'Let us check if it is really you',
+  body: 'We will do a short live video check to make sure you are really there, then match your face with '
+    + 'the photo on your Scaler record. This takes about 20 seconds.',
+  instructions: 'Follow the instructions on your screen and keep your face in the oval until it finishes.',
+  retention: 'Your scan is kept securely for exam records and deleted after 90 days.',
+  checkbox: 'I agree to a face check.',
+  declined: 'You need to agree to the face check to take this test. If you have questions, contact support.',
 };
 
-export const VERIFIED_CONFIRMATION = 'By clicking, you confirm that the person taking this test is you. '
-  + 'Misrepresentation may result in disqualification.';
+export const VERIFIED_CONFIRMATION = 'I confirm that I am the person taking this test. '
+  + 'If this is not true, the exam team can cancel my test.';
+
+export const CAPTURE_COPY = {
+  waiting: 'Waiting for you to sit in front of the camera',
+  ready: 'You are in frame. Start when ready.',
+  running: 'Follow the instructions in the camera window.',
+  pill: 'Put your face in the oval',
+  caption: 'A short live check: keep your face in the oval while the screen changes colour.',
+};
 
 export type IdentityScreenState =
   | 'loading' | 'skip' | 'consent' | 'capture' | 'analysing' | 'verified' | 'captured'
@@ -27,29 +39,50 @@ export interface IdentityScreen {
   body: string;
   // The pink strip at the top of the card, with the specific reason.
   banner: string;
-  attempt: { current: number; max: number } | null;
+  // "What to do" on a failed attempt.
+  tip: string;
+  bullets: string[];
+  attemptsUsed: number | null;
+  attemptsLeft: number | null;
   referenceId: string | null;
   canRetry: boolean;
   canProceed: boolean;
 }
 
-const FACE_NOT_VISIBLE = 'Your face was not fully visible.';
+const isLiveness = (reason?: string | null) => Boolean(reason?.startsWith('liveness_')) && reason !== 'liveness_no_frame';
+const isMismatch = (reason?: string | null) => reason === 'mismatch' || reason === 'attempts_exhausted';
 
-// Specific to the cause, never generic (acceptance criterion 6).
+// Specific to the cause, never generic.
 export const failureBanner = (reason?: string | null): string => {
-  if (reason === 'mismatch' || reason === 'attempts_exhausted') {
-    return "We couldn't match your face. Try again in better lighting.";
-  }
-  if (reason === 'liveness_no_frame') return FACE_NOT_VISIBLE;
-  if (reason?.startsWith('liveness_')) return "We couldn't confirm a live person. Follow the on-screen prompts.";
+  if (isMismatch(reason)) return 'Face verification failed. Please try again in better light.';
+  if (isLiveness(reason)) return 'We could not confirm you are really there. Please follow the instructions on screen.';
   const message = reasonMessage(reason);
-  return message === reasonMessage(null) ? FACE_NOT_VISIBLE : message;
+  return message === reasonMessage(null) ? 'Your face was not fully visible. Please try again.' : message;
 };
 
-const attemptChip = (status: IdentityStatus, policy?: IdentityPolicy | null) => {
+const failureDetail = (reason?: string | null): { body: string; tip: string } => {
+  if (isMismatch(reason)) {
+    return {
+      body: 'Your photo did not match the photo we have for you.',
+      tip: 'Sit where there is more light. Turn towards the light. Keep your whole face in the oval.',
+    };
+  }
+  if (isLiveness(reason)) {
+    return {
+      body: 'We could not confirm a live person in front of the camera.',
+      tip: 'Keep your face in the oval and hold still while the screen changes colour. Do not use a photo or a screen.',
+    };
+  }
+  return {
+    body: 'We could not see your face clearly.',
+    tip: 'Face the camera in good light and keep your whole face in the oval.',
+  };
+};
+
+const attempts = (status: IdentityStatus, policy?: IdentityPolicy | null) => {
   const max = policy?.max_attempts;
-  if (!max || typeof status.attempts_remaining !== 'number') return null;
-  return { current: Math.min(max - status.attempts_remaining + 1, max), max };
+  if (!max || typeof status.attempts_remaining !== 'number') return { attemptsUsed: null, attemptsLeft: null };
+  return { attemptsUsed: Math.max(max - status.attempts_remaining, 0), attemptsLeft: status.attempts_remaining };
 };
 
 const screen = (state: IdentityScreenState, fields: Partial<IdentityScreen> = {}): IdentityScreen => ({
@@ -58,7 +91,10 @@ const screen = (state: IdentityScreenState, fields: Partial<IdentityScreen> = {}
   title: '',
   body: '',
   banner: '',
-  attempt: null,
+  tip: '',
+  bullets: [],
+  attemptsUsed: null,
+  attemptsLeft: null,
   referenceId: null,
   canRetry: false,
   canProceed: false,
@@ -77,60 +113,65 @@ export const identityScreen = (
     return screen('consent', { title: CONSENT_COPY.title, body: CONSENT_COPY.body });
   }
 
-  const blocked = {
-    tone: 'error' as const,
-    title: "We couldn't verify your identity",
-    referenceId: status.reference_id ?? null,
-  };
   switch (status.status) {
     case 'pending':
-      return screen('analysing', { title: 'Verifying your identity...' });
+      return screen('analysing', { title: 'Checking that it is you…' });
     case 'verified':
-      return screen('verified', { tone: 'completed', title: 'Identity verified', canProceed: true });
+      return screen('verified', {
+        tone: 'completed', title: 'Face scan complete', body: 'Your face matches the photo on your record.', canProceed: true,
+      });
     case 'captured':
       // No reference photo yet: the check is recorded and matched later, so nothing is claimed as matched.
       return screen('captured', {
         tone: 'completed',
-        title: 'Check complete',
-        body: "Your check is recorded. It will be matched with your Scaler record once your photo is on file.",
+        title: 'Face scan complete',
+        body: 'Your check is recorded. It will be matched with your Scaler record once your photo is on file.',
         canProceed: true,
       });
     case 'retry':
       return screen('attempt_failed', {
         tone: 'error',
-        title: "Let's try that again",
+        title: 'Face verification failed',
+        ...failureDetail(status.reason),
         banner: failureBanner(status.reason),
-        attempt: attemptChip(status, policy),
+        ...attempts(status, policy),
         canRetry: true,
         canProceed: status.allowed,
       });
     case 'failed':
       if (status.allowed) {
-        return screen('attempt_failed', { tone: 'error', title: 'Verification did not pass', banner: failureBanner(status.reason), canProceed: true });
+        return screen('attempt_failed', {
+          tone: 'error', title: 'Face verification failed', ...failureDetail(status.reason), banner: failureBanner(status.reason), canProceed: true,
+        });
       }
       return screen('blocked', {
-        ...blocked,
-        body: "You can't start the test right now. Contact support and quote this reference ID.",
-        banner: failureBanner(status.reason),
+        tone: 'error',
+        title: 'We could not verify you',
+        body: 'You cannot start the test now. Please contact support.',
+        banner: 'We could not check it is you. You have no attempts left.',
+        bullets: ['Contact support and quote your reference ID', 'Do not open the test again. Your attempts do not reset'],
+        referenceId: status.reference_id ?? null,
       });
     case 'blocked':
       return screen('blocked', {
-        ...blocked,
-        body: 'No photo is on your Scaler record to match against. Contact support and quote this reference ID.',
+        tone: 'error',
+        title: 'We could not verify you',
+        body: 'There is no photo on your Scaler record to match. Please contact support.',
+        banner: 'We could not check it is you.',
+        bullets: ['Contact support and quote your reference ID'],
+        referenceId: status.reference_id ?? null,
       });
     case 'engine_error':
       // Not the candidate's fault: no attempt used, and the template decides whether they may go on.
       return screen('service_error', {
-        title: 'Verification is temporarily unavailable',
-        body: "This isn't your fault and no attempt has been used. Try again in a moment.",
+        title: 'The face check is not working',
+        body: 'This is not your mistake. You did not use an attempt. Please try again in a minute.',
+        banner: 'The check is not working right now.',
+        ...attempts(status, policy),
         canRetry: true,
         canProceed: status.allowed,
       });
     default:
-      return screen('capture', {
-        title: CONSENT_COPY.title,
-        body: 'Keep your face inside the oval and follow the prompts.',
-        canProceed: status.allowed,
-      });
+      return screen('capture', { title: CONSENT_COPY.title, canProceed: status.allowed });
   }
 };
