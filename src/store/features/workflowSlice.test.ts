@@ -23,14 +23,26 @@ const withSteps = (identityEnabled: boolean): WorkflowState => reducer(undefined
 }));
 
 describe('workflowSlice identity verification step', () => {
-  it('runs as the last step when enabled', () => {
+  it('runs right after the desktop camera, before the other steps', () => {
     let state = withSteps(true);
-    state = reducer(state, nextStep());
-    expect(state.activeStep).toBe('compatibilityChecks');
-
+    expect(state.activeStep).toBe('cameraShare');
     state = reducer(state, nextStep());
     expect(state.activeStep).toBe('identityVerification');
     expect(state.steps.identityVerification.locked).toBe(false);
+
+    state = reducer(state, nextStep());
+    expect(state.activeStep).toBe('compatibilityChecks');
+  });
+
+  it('starts at the first enabled step in wizard order, whatever order the host lists them', () => {
+    const state = reducer(undefined, setBulkStepEnabled({
+      compatibilityChecks: { step: 'compatibilityChecks', enabled: true },
+      screenShare: { step: 'screenShare', enabled: true },
+      mobileCameraShare: { step: 'mobileCameraShare', enabled: false },
+      identityVerification: { step: 'identityVerification', enabled: true },
+      cameraShare: { step: 'cameraShare', enabled: false },
+    }));
+    expect(state.activeStep).toBe('identityVerification');
   });
 
   it('stays enabled when the template verifies identity', () => {
@@ -44,7 +56,7 @@ describe('workflowSlice identity verification step', () => {
     expect(state.activeStep).toBe('cameraShare');
   });
 
-  it('completes the workflow when it is dropped while active', () => {
+  it('moves on to the next step when it is dropped while active', () => {
     const onComplete = jest.fn();
     let state = reducer(withSteps(true), setOnWorkflowComplete(onComplete));
     state = reducer({ ...state, modalOpen: true }, setActiveStep('identityVerification'));
@@ -52,6 +64,23 @@ describe('workflowSlice identity verification step', () => {
     state = reducer(state, tokenFetched(null));
 
     expect(state.steps.identityVerification.enabled).toBe(false);
+    expect(state.activeStep).toBe('compatibilityChecks');
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('completes the workflow when the step dropped is the last one left', () => {
+    const onComplete = jest.fn();
+    let state = reducer(undefined, setBulkStepEnabled({
+      cameraShare: { step: 'cameraShare', enabled: false },
+      screenShare: { step: 'screenShare', enabled: false },
+      mobileCameraShare: { step: 'mobileCameraShare', enabled: false },
+      compatibilityChecks: { step: 'compatibilityChecks', enabled: false },
+      identityVerification: { step: 'identityVerification', enabled: true },
+    }));
+    state = reducer({ ...state, modalOpen: true }, setOnWorkflowComplete(onComplete));
+
+    state = reducer(state, tokenFetched(null));
+
     expect(state.modalOpen).toBe(false);
     expect(onComplete).toHaveBeenCalledTimes(1);
   });

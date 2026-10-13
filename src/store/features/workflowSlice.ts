@@ -9,6 +9,7 @@ import {
 } from '@/types/workflowTypes';
 import { fetchToken } from '@/store/features/assessmentInfoSlice';
 import { isIdentityStepWanted } from '@/utils/identityVerification';
+import { STEP_ORDER } from '@/utils/stepOrder';
 
 const createSubStep = (): SubStepState => ({
   status: 'locked',
@@ -66,7 +67,7 @@ const initialState: WorkflowState = {
 
 // Moves to the next enabled step, or closes the modal and completes the workflow after the last.
 const advanceToNextStep = (state: WorkflowState) => {
-  const steps = Object.keys(state.steps) as WorkflowStepKey[];
+  const steps = STEP_ORDER;
   const currentIndex = steps.indexOf(state.activeStep);
 
   const nextEnabledStepIndex = steps.findIndex((step, index) =>
@@ -232,9 +233,7 @@ const workflowSlice = createSlice({
         }
       });
 
-      const firstEnabledStep = Object.values(action.payload).find(
-        ({ enabled }) => enabled
-      )?.step;
+      const firstEnabledStep = STEP_ORDER.find((step) => state.steps[step].enabled);
       if (firstEnabledStep) {
         state.activeStep = firstEnabledStep;
       }

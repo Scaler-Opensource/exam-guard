@@ -9,6 +9,7 @@ import { SubStepState } from '@/types/workflowTypes';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { selectStep, selectSubStep } from '@/store/features/workflowSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
+import { useStepNumber } from '@/hooks/useStepNumber';
 import GuideModal from '@/ui/GuideModal';
 import LightbulbIcon from '@/assets/images/light-bulb.svg';
 import ScreenShareCard from '@/ui/ScreenShareCard';
@@ -17,6 +18,7 @@ import StepHeader from '@/ui/StepHeader';
 
 const ScreenShareStep = () => {
   const dispatch = useAppDispatch();
+  const stepNumber = useStepNumber('screenShare');
   const { acknowledged, subSteps } = useAppSelector((state) =>
     selectStep(state, 'screenShare'),
   );
@@ -56,7 +58,7 @@ const ScreenShareStep = () => {
   return (
     <>
       <StepHeader
-        stepNumber='1'
+        stepNumber={stepNumber}
         title='Share your Entire Screen'
         status={status}
       />

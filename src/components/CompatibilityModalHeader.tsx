@@ -11,7 +11,7 @@ export default function CompatibilityModalHeader() {
       <img src={Logo} alt='Scaler Logo' className='h-6' />
       <div className='mt-12'>
         <p className='text-base-200 text-base'>
-          Hi {assessmentInfo?.userName}!
+          {assessmentInfo?.userName?.trim() ? `Hi ${assessmentInfo.userName.trim()}!` : 'Hi!'}
         </p>
         <h1 className='text-2xl font-bold mt-1'>
           {assessmentInfo?.assessmentName}

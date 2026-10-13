@@ -7,11 +7,13 @@ import { evaluateParentStepStatus } from '@/utils/evaluateParentStepStatus';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 import { selectStep, nextStep, setStepAcknowledged } from '@/store/features/workflowSlice';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
+import { useStepNumber } from '@/hooks/useStepNumber';
 import StepHeader from '@/ui/StepHeader';
 import SystemCheckCard from '@/ui/SystemCheckCard';
 
 const SystemChecksStep = () => {
   const dispatch = useAppDispatch();
+  const stepNumber = useStepNumber('compatibilityChecks');
   const proctor = useAppSelector((state) => selectProctor(state));
   const { acknowledged, subSteps } = useAppSelector((state) => (
     selectStep(state, 'compatibilityChecks')
@@ -52,7 +54,7 @@ const SystemChecksStep = () => {
   return (
     <>
       <StepHeader
-        stepNumber='4'
+        stepNumber={stepNumber}
         title='System Compatibility Checks'
         status={status}
       />
