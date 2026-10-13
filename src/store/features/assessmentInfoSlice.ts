@@ -6,6 +6,7 @@ const initialState: AssessmentInfoState = {
   assessmentName: '',
   proctor: null,
   token: null,
+  identity: null,
 };
 
 export const fetchToken = createAsyncThunk(
@@ -21,7 +22,7 @@ export const fetchToken = createAsyncThunk(
     const data = await response.json();
     const token = data?.token;
     (window as any).PROCTORING_SESSION_TOKEN = token;
-    return token;
+    return { token, identity: data?.identity ?? null };
   }
 );
 
@@ -45,7 +46,8 @@ const assessmentInfoSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchToken.fulfilled, (state, action) => {
-      state.token = action.payload;
+      state.token = action.payload.token;
+      state.identity = action.payload.identity;
     });
   },
 });

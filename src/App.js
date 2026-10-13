@@ -47,6 +47,7 @@ const App = ({
   enableProctoring: enableProctoringProp = false,
   beepConfig,
   networkConfig,
+  identityConfig,
 }) => {
   const dispatch = useAppDispatch();
   const { enableProctoring: enableProctoringState } = useAppSelector(
@@ -62,6 +63,8 @@ const App = ({
   const { enabled: enabledFullScreenConfig } = config?.fullScreen ?? {
     enabled: true,
   };
+  // Identity is verified once, before the test: never in the in-test re-check modal.
+  const enabledIdentityConfig = Boolean(identityConfig?.enabled) && !enableProctoringProp;
 
   const steps = useMemo(
     () => ({
@@ -84,6 +87,10 @@ const App = ({
           fullScreenCheck: enabledFullScreenConfig ?? true,
         },
       },
+      identityVerification: {
+        step: 'identityVerification',
+        enabled: enabledIdentityConfig,
+      },
     }),
     [
       enabledScreenshotConfig,
@@ -91,6 +98,7 @@ const App = ({
       enabledMobilePairingConfig,
       enabledCompatibilityCheckConfig,
       enabledFullScreenConfig,
+      enabledIdentityConfig,
     ],
   );
 

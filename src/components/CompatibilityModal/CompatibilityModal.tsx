@@ -5,6 +5,7 @@ import {
   Smartphone,
   Settings,
   CircleCheck,
+  ScanFace,
 } from 'lucide-react';
 
 import { Modal } from '@/ui/Modal';
@@ -15,6 +16,7 @@ import CompatibilityModalHeader from '@/components/CompatibilityModalHeader';
 import CompatibilityModalStepsScreen from '@/components/CompatibilityModalStepsScreen';
 import DesktopCameraStep from '@/components/DesktopCameraStep';
 import DisqualificationTimerBar from '@/components/DisqualificationTimerBar';
+import IdentityVerificationStep from '@/components/IdentityVerificationStep';
 import MobileCameraStep from '@/components/MobileCameraStep';
 import ScreenShareStep from '@/components/ScreenShareStep';
 import SystemChecksStep from '@/components/SystemChecksStep';
@@ -39,6 +41,11 @@ const ALL_STEPS: Record<string, Step> = {
     icon: Settings,
     title: 'System Compatibility Checks',
     component: <SystemChecksStep />,
+  },
+  identityVerification: {
+    icon: ScanFace,
+    title: 'Identity Verification',
+    component: <IdentityVerificationStep />,
   },
 };
 
