@@ -51,6 +51,8 @@ const REASON_MESSAGES: Record<string, string> = {
   liveness_incomplete: "The liveness check didn't finish. Try again.",
   liveness_no_frame: "The liveness check couldn't capture your face. Face the camera and try again.",
   engine_capacity: 'Many candidates are verifying right now. Please try again in a moment.',
+  engine_throttled: 'Many candidates are verifying right now. Please try again in a moment.',
+  unreadable_image: "We couldn't read the photo from your camera. Please try again.",
   virtual_camera: 'A virtual camera is selected. Choose your physical webcam to continue.',
   liveness_in_progress: 'Another liveness check is already running for this test. Close it and try again.',
   liveness_not_enabled: 'This test does not use the liveness check.',
