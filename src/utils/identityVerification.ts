@@ -10,6 +10,9 @@ export interface IdentityPolicy {
   required: boolean;
   max_attempts?: number;
   max_captures?: number;
+  liveness?: { mode: IdentityMode; required: boolean };
+  camera_integrity?: { mode: IdentityMode };
+  verification_window_minutes?: number;
 }
 
 // GET /api/v1/proctoring/identity/status
@@ -24,6 +27,7 @@ export interface IdentityStatus {
   attempts_remaining?: number | null;
   captures_remaining?: number | null;
   retry_after?: number | null;
+  liveness?: { mode: IdentityMode; status?: string | null } | null;
 }
 
 export type IdentityPhase = 'loading' | 'skip' | 'capture' | 'verifying' | 'done' | 'blocked';
@@ -49,7 +53,33 @@ const REASON_MESSAGES: Record<string, string> = {
   attempts_exhausted: 'Your photos did not match your reference photo.',
   captures_exhausted: 'You have used all your verification attempts.',
   engine_timeout: 'Verification is taking longer than expected.',
+  liveness_failed: "We couldn't confirm a live person in front of the camera. Face the camera in good light and try again.",
+  liveness_expired: "The liveness check didn't finish in time. Try again.",
+  liveness_incomplete: "The liveness check didn't finish. Try again.",
+  liveness_no_frame: "The liveness check couldn't capture your face. Face the camera and try again.",
+  engine_capacity: 'Many candidates are verifying right now. Please try again in a moment.',
+  virtual_camera: 'A virtual camera is selected. Choose your physical webcam to continue.',
+  liveness_in_progress: 'Another liveness check is already running for this test. Close it and try again.',
+  liveness_not_enabled: 'This test does not use the liveness check.',
+  engine_unavailable: 'The verification service is unavailable right now. Please try again in a moment.',
+  unknown_liveness_session: 'This check expired. Start it again.',
+  liveness_session_expired: 'This check expired. Start a new one.',
+  already_verified: 'You are already verified for this test.',
+  verification_in_progress: 'Your previous check is still being verified. Please wait for the result.',
+  not_required: 'This test does not need identity verification.',
+  service_unavailable: 'The verification service is unavailable right now.',
+  request_failed: 'The request failed. Check your connection and try again.',
+  upload_failed: "Your photo didn't upload. Check your connection and try again.",
 };
+
+// A candidate-facing message with the code support can match to the server logs.
+export const errorText = (code: string, message?: string): string => (
+  `${message || reasonMessage(code)} (Error code: ${code})`
+);
+
+export const isLivenessOn = (status: IdentityStatus | null | undefined): boolean => (
+  Boolean(status?.liveness) && status!.liveness!.mode !== 'off'
+);
 
 export const reasonMessage = (reason?: string | null): string => {
   if (reason && REASON_MESSAGES[reason]) return REASON_MESSAGES[reason];

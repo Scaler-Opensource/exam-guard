@@ -58,6 +58,8 @@ import { checkMobilePairingStatus } from './utils/mobilePairing';
 import { getBrowserInfo } from './utils/browser';
 import { getIndexDbBufferInstance } from './utils/indexDbBuffer';
 import ViolationWorker from './workers/violation.worker';
+import { reportCameraChange } from './services/identityVerificationService';
+import { cameraSignals } from './utils/cameraIntegrity';
 import CompatibilityWorker from './workers/compatibility.worker';
 import NetworkWorker from './workers/network.worker';
 
@@ -911,6 +913,20 @@ export default class Proctor {
     this.snapshotConfig.deviceId = deviceId;
     // Store the selected device ID in localStorage
     localStorage.setItem('selectedWebcamDeviceId', deviceId);
+    this.reportCameraChange(deviceId);
+  }
+
+  // Camera integrity: a switch to a virtual camera after the identity step is reported, never blocked.
+  async reportCameraChange(deviceId) {
+    const token = window.PROCTORING_SESSION_TOKEN;
+    if (!token || !this.baseUrl || !navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const label = devices.find((device) => device.deviceId === deviceId)?.label;
+      await reportCameraChange({ baseUrl: this.baseUrl, token, signals: cameraSignals(label) });
+    } catch (error) {
+      console.warn('Camera change could not be reported', error);
+    }
   }
 
   handleScreenshotFailure() {
