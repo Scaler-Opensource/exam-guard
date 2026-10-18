@@ -7,11 +7,13 @@ import {
 } from '@/store/features/workflowSlice';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
 
-// Define optimal constraints for low resource usage
+// 640x480, not a smaller preview size: the proctoring snapshot stream is opened while this one is live and,
+// on many devices, inherits its capture size for the whole test, and the identity selfie then comes out at
+// 160x120-320x180 and is rejected as blurry (production, Oct 2026). Low frame rate keeps the cost down.
 const LOW_QUALITY_CONSTRAINTS = {
   video: {
-    width: { ideal: 160 },     // Using ideal instead of max
-    height: { ideal: 120 },    // Using ideal instead of max
+    width: { ideal: 640 },
+    height: { ideal: 480 },
     frameRate: {
       ideal: 4    // Still keep ideal for browsers that respect it
     },  

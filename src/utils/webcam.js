@@ -1,6 +1,7 @@
 import webcamHtml from '../templates/webcam.html';
 import resizeImage from './image';
 import { getIndexDbBufferInstance } from './indexDbBuffer';
+import { isOnDevice } from './webcamStream';
 
 // Track active stream globally
 let activeStream = null;
@@ -186,6 +187,9 @@ export function detectWebcam({
   blackPixelThreshold = 0.8,
   deviceId = null || '',
 }) {
+  // A stream on another camera is replaced, so a camera switch reaches the snapshots.
+  if (activeStream && !isOnDevice(activeStream, deviceId)) cleanupWebcam();
+
   // If there's already an active stream, reuse it
   if (activeStream) {
     const videoElement = getVideoElement();

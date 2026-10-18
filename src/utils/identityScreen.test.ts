@@ -15,6 +15,16 @@ describe('identityScreen', () => {
     expect(identityScreen(status({ status: 'not_required', allowed: true }))).toMatchObject({ state: 'skip', canProceed: true });
   });
 
+  it('describes a single photo, not a live video check, when liveness is off', () => {
+    const notGiven = { consent: { required: true, given: false, version: '2026-10-06' } };
+    const selfie = identityScreen(status({ ...notGiven, liveness: { mode: 'off' } }));
+    const live = identityScreen(status({ ...notGiven, liveness: { mode: 'required' } }));
+
+    expect(selfie.body).toContain('one photo');
+    expect(selfie.body).not.toContain('live video');
+    expect(live.body).toContain('live video');
+  });
+
   it('asks for consent before anything else', () => {
     const s = identityScreen(status({ consent: { required: true, given: false, version: '2026-10-06' } }));
     expect(s).toMatchObject({ state: 'consent', title: 'Let us check if it is really you', canProceed: false });
