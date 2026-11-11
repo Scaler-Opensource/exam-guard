@@ -200,6 +200,8 @@ export const identityScreen = (
         body: 'This is not your mistake. You did not use an attempt. Please try again in a minute.',
         banner: 'The check is not working right now.',
         ...attempts(status, policy),
+        // Sent only when the template blocks on an outage, so support can override the candidate.
+        referenceId: status.reference_id ?? null,
         canRetry: true,
         canProceed: status.allowed,
       });

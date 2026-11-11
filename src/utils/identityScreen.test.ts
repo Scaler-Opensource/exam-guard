@@ -66,6 +66,12 @@ describe('identityScreen', () => {
     expect(blocked.body).toMatch(/not your mistake/);
     expect(identityScreen(status({ status: 'engine_error', allowed: true })).canProceed).toBe(true);
   });
+
+  it('shows the reference ID when an outage blocks the candidate', () => {
+    const s = identityScreen(status({ status: 'engine_error', reason: 'engine_unavailable', reference_id: 'DCP-8F2K41' }), policy);
+    expect(s).toMatchObject({ state: 'service_error', referenceId: 'DCP-8F2K41', canRetry: true, canProceed: false });
+    expect(identityScreen(status({ status: 'engine_error', allowed: true })).referenceId).toBeNull();
+  });
 });
 
 describe('manual override', () => {

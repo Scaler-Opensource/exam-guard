@@ -476,6 +476,7 @@ const IdentityVerificationStep = () => {
           <div>
             <PanelHeading title={screen.title} sub={screen.body} />
             {screen.attemptsUsed != null && <InfoRow label='Attempts used' value={screen.attemptsUsed} />}
+            {screen.referenceId && <InfoRow label='Reference ID' value={screen.referenceId} />}
           </div>
         </Split>
       </IdentityCard>

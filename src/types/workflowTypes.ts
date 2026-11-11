@@ -31,6 +31,8 @@ export interface WorkflowState {
   modalOpen: boolean;
   isDisqualified: boolean;
   activeStep: WorkflowStepKey;
+  // Init has answered whether the template verifies identity; until then the step is enabled but not shown.
+  identityResolved: boolean;
   steps: {
     screenShare: StepState;
     cameraShare: StepState;
