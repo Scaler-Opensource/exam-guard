@@ -14,7 +14,7 @@ const ConsentCard = ({ baseUrl, livenessOn, onOpenGuide }: { baseUrl: string; li
       <IllustrationPanel tone='info' baseUrl={baseUrl} />
       <div>
         <h3 className='text-xl font-bold text-base-700'>{CONSENT_COPY.title}</h3>
-        <p className='mt-3 text-base leading-relaxed text-base-500'>{CONSENT_COPY.body}</p>
+        <p className='mt-3 text-base leading-relaxed text-base-500'>{livenessOn ? CONSENT_COPY.body : CONSENT_COPY.selfieBody}</p>
         {livenessOn ? (
           <>
             <ul className='mt-3 list-disc space-y-1 pl-5 text-base leading-relaxed text-base-500'>
@@ -26,7 +26,7 @@ const ConsentCard = ({ baseUrl, livenessOn, onOpenGuide }: { baseUrl: string; li
             </p>
           </>
         ) : (
-          <p className='mt-3 text-base leading-relaxed text-base-500'>{CONSENT_COPY.instructions}</p>
+          <p className='mt-3 text-base leading-relaxed text-base-500'>{CONSENT_COPY.selfieInstructions}</p>
         )}
         <InfoRow label={CONSENT_COPY.retention} />
         <GuideLink onOpen={onOpenGuide} />
