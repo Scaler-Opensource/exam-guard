@@ -4,7 +4,7 @@ import reducer, {
   setActiveStep,
   setOnWorkflowComplete,
 } from '@/store/features/workflowSlice';
-import assessmentInfoReducer, { fetchToken } from '@/store/features/assessmentInfoSlice';
+import assessmentInfoReducer, { fetchToken, setAssessmentInfo } from '@/store/features/assessmentInfoSlice';
 import { IdentityPolicy } from '@/utils/identityVerification';
 import { WorkflowState } from '@/types/workflowTypes';
 
@@ -96,5 +96,22 @@ describe('assessmentInfoSlice', () => {
     const state = assessmentInfoReducer(undefined, tokenFetched({ mode: 'advisory', required: false }));
     expect(state.token).toBe('jwt');
     expect(state.identity).toEqual({ mode: 'advisory', required: false });
+  });
+
+  it('carries the host-supplied logo url from init', () => {
+    const state = assessmentInfoReducer(undefined, setAssessmentInfo({
+      userName: 'Asha',
+      assessmentName: 'Varsity Test',
+      logoUrl: 'https://cdn.example.com/partner-logo.png',
+    }));
+    expect(state.logoUrl).toBe('https://cdn.example.com/partner-logo.png');
+  });
+
+  it('falls back to a null logo url when the host omits it', () => {
+    const state = assessmentInfoReducer(undefined, setAssessmentInfo({
+      userName: 'Asha',
+      assessmentName: 'Varsity Test',
+    }));
+    expect(state.logoUrl).toBeNull();
   });
 });
