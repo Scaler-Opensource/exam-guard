@@ -363,7 +363,7 @@ const IdentityVerificationStep = () => {
                 style={{ transform: 'scale(-1, 1)' }}
               />
             </CameraFrame>
-            <p className='mt-3 text-center text-sm text-base-500'>{CAPTURE_COPY.caption}</p>
+            <p className='mt-3 text-center text-sm text-base-500'>{CAPTURE_COPY.selfieCaption}</p>
           </div>
           <IdlePanel spinner={!cameraReady}>
             {cameraReady ? CAPTURE_COPY.ready : CAPTURE_COPY.waiting}
@@ -476,6 +476,7 @@ const IdentityVerificationStep = () => {
           <div>
             <PanelHeading title={screen.title} sub={screen.body} />
             {screen.attemptsUsed != null && <InfoRow label='Attempts used' value={screen.attemptsUsed} />}
+            {screen.referenceId && <InfoRow label='Reference ID' value={screen.referenceId} />}
           </div>
         </Split>
       </IdentityCard>

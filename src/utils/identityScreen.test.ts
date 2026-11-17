@@ -15,6 +15,16 @@ describe('identityScreen', () => {
     expect(identityScreen(status({ status: 'not_required', allowed: true }))).toMatchObject({ state: 'skip', canProceed: true });
   });
 
+  it('describes a single photo, not a live video check, when liveness is off', () => {
+    const notGiven = { consent: { required: true, given: false, version: '2026-10-06' } };
+    const selfie = identityScreen(status({ ...notGiven, liveness: { mode: 'off' } }));
+    const live = identityScreen(status({ ...notGiven, liveness: { mode: 'required' } }));
+
+    expect(selfie.body).toContain('one photo');
+    expect(selfie.body).not.toContain('live video');
+    expect(live.body).toContain('live video');
+  });
+
   it('asks for consent before anything else', () => {
     const s = identityScreen(status({ consent: { required: true, given: false, version: '2026-10-06' } }));
     expect(s).toMatchObject({ state: 'consent', title: 'Let us check if it is really you', canProceed: false });
@@ -65,6 +75,12 @@ describe('identityScreen', () => {
     expect(blocked).toMatchObject({ state: 'service_error', tone: 'pending', canRetry: true, canProceed: false, attemptsUsed: 0 });
     expect(blocked.body).toMatch(/not your mistake/);
     expect(identityScreen(status({ status: 'engine_error', allowed: true })).canProceed).toBe(true);
+  });
+
+  it('shows the reference ID when an outage blocks the candidate', () => {
+    const s = identityScreen(status({ status: 'engine_error', reason: 'engine_unavailable', reference_id: 'DCP-8F2K41' }), policy);
+    expect(s).toMatchObject({ state: 'service_error', referenceId: 'DCP-8F2K41', canRetry: true, canProceed: false });
+    expect(identityScreen(status({ status: 'engine_error', allowed: true })).referenceId).toBeNull();
   });
 });
 

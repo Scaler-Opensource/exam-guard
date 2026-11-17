@@ -52,3 +52,15 @@ export function detectFullScreen({ onFullScreenEnabled, onFullScreenDisabled }) 
   document.addEventListener('mozfullscreenchange', handleFullScreenChange);
   document.addEventListener('MSFullscreenChange', handleFullScreenChange);
 }
+
+const FULL_SCREEN_EVENTS = [
+  'fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange',
+];
+
+// Calls onChange(true | false) whenever the page enters or leaves full screen.
+// Returns the unsubscribe.
+export function watchFullScreen(onChange) {
+  const handle = () => onChange(Boolean(isFullScreen()));
+  FULL_SCREEN_EVENTS.forEach((name) => document.addEventListener(name, handle));
+  return () => FULL_SCREEN_EVENTS.forEach((name) => document.removeEventListener(name, handle));
+}

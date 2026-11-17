@@ -5,7 +5,10 @@ import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
 import { evaluateParentStepStatus } from '@/utils/evaluateParentStepStatus';
 import { selectProctor } from '@/store/features/assessmentInfoSlice';
-import { selectStep, nextStep, setStepAcknowledged } from '@/store/features/workflowSlice';
+import {
+  selectStep, nextStep, setStepAcknowledged, setSubStepStatus,
+} from '@/store/features/workflowSlice';
+import { watchFullScreen } from '@/utils/fullScreenBlocker';
 import { useAppDispatch, useAppSelector } from '@/hooks/reduxhooks';
 import { useStepNumber } from '@/hooks/useStepNumber';
 import StepHeader from '@/ui/StepHeader';
@@ -25,6 +28,19 @@ const SystemChecksStep = () => {
       proctor?.handleCompatibilityChecks();
     }
   }, [proctor]);
+
+  const fullScreenCheckEnabled = subSteps.fullScreenCheck?.enabled;
+  useEffect(() => {
+    // Before the test proctoring hasn't started, so nothing else listens for
+    // the student entering full screen.
+    if (enableProctoring || !fullScreenCheckEnabled) return undefined;
+    return watchFullScreen((on) => dispatch(setSubStepStatus({
+      step: 'compatibilityChecks',
+      subStep: 'fullScreenCheck',
+      status: on ? 'completed' : 'error',
+      clearError: on,
+    })));
+  }, [dispatch, enableProctoring, fullScreenCheckEnabled]);
 
   const handleCheckboxChange = () => {
     dispatch(
