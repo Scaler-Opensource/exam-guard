@@ -37,6 +37,7 @@ const initialState: WorkflowState = {
   modalOpen: false,
   isDisqualified: false,
   activeStep: 'cameraShare',
+  identityResolved: false,
   steps: {
     cameraShare: createStep(['cameraShare'], false),
     screenShare: createStep(['screenShare']),
@@ -280,6 +281,7 @@ const workflowSlice = createSlice({
     // The host enables the identity step up front so a fast candidate cannot finish the
     // workflow before init responds; drop it once the template turns out not to verify.
     builder.addCase(fetchToken.fulfilled, (state, action) => {
+      state.identityResolved = true;
       const step = state.steps.identityVerification;
       if (!step.enabled || isIdentityStepWanted(true, action.payload.identity)) return;
 
@@ -287,6 +289,10 @@ const workflowSlice = createSlice({
       if (state.activeStep === 'identityVerification') {
         advanceToNextStep(state);
       }
+    });
+    // Without an answer the step stays as the host set it, now shown.
+    builder.addCase(fetchToken.rejected, (state) => {
+      state.identityResolved = true;
     });
   },
 });

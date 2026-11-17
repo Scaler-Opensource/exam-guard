@@ -12,7 +12,7 @@ import { Modal } from '@/ui/Modal';
 import { Step, WorkflowStepKey } from '@/types/workflowTypes';
 import { useAppSelector } from '@/hooks/reduxhooks';
 import { evaluateParentStepStatus } from '@/utils/evaluateParentStepStatus';
-import { STEP_ORDER } from '@/utils/stepOrder';
+import { STEP_ORDER, shownSteps } from '@/utils/stepOrder';
 import CompatibilityModalHeader from '@/components/CompatibilityModalHeader';
 import CompatibilityModalStepsScreen from '@/components/CompatibilityModalStepsScreen';
 import DesktopCameraStep from '@/components/DesktopCameraStep';
@@ -51,7 +51,7 @@ const ALL_STEPS: Record<string, Step> = {
 };
 
 export default function CompatibilityModal() {
-  const { activeStep, enableProctoring, steps, modalOpen } = useAppSelector(
+  const { activeStep, enableProctoring, steps, modalOpen, identityResolved } = useAppSelector(
     (state) => state.workflow,
   );
   const isDisqualified = useAppSelector(
@@ -63,16 +63,17 @@ export default function CompatibilityModal() {
   const [timer, setTimer] = useState(3);
 
   const enabledSteps = useMemo(() => {
+    const shown = shownSteps(steps, identityResolved, activeStep);
     return STEP_ORDER.reduce(
       (acc, key) => {
-        if (steps[key]?.enabled) {
+        if (shown[key]?.enabled) {
           acc[key] = ALL_STEPS[key];
         }
         return acc;
       },
       {} as Record<string, Step>,
     );
-  }, [steps]);
+  }, [steps, identityResolved, activeStep]);
 
   const failingSteps = useMemo(() => {
     return Object.entries(steps).reduce((acc, [key, stepState]) => {

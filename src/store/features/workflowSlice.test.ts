@@ -45,6 +45,16 @@ describe('workflowSlice identity verification step', () => {
     expect(state.activeStep).toBe('identityVerification');
   });
 
+  it('is enabled but unresolved until init answers, and resolved after', () => {
+    const before = withSteps(true);
+    expect(before).toMatchObject({ identityResolved: false });
+    expect(before.steps.identityVerification.enabled).toBe(true);
+    expect(reducer(before, tokenFetched({ mode: 'off', required: false })).identityResolved).toBe(true);
+    const failed = reducer(before, fetchToken.rejected(new Error('down'), 'request-id', { baseUrl: '', payload: {} }));
+    expect(failed.identityResolved).toBe(true);
+    expect(failed.steps.identityVerification.enabled).toBe(true);
+  });
+
   it('stays enabled when the template verifies identity', () => {
     const state = reducer(withSteps(true), tokenFetched({ mode: 'required', required: true }));
     expect(state.steps.identityVerification.enabled).toBe(true);
