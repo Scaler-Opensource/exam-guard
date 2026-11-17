@@ -86,7 +86,7 @@ export default function ScreenShareCard() {
             </p>
             {screenShareState.status === 'completed' ? (
               <div className='flex items-center justify-between p-4 bg-gray-100 rounded-2xl text-sm'>
-                <span>scaler.com is sharing your screen</span>
+                <span>{window.location.hostname || 'scaler.com'} is sharing your screen</span>
                 <div className='flex gap-2'>
                   <Button onClick={handleStop} className='text-red-500' size='xs' variant='secondary'>
                     Stop Sharing
