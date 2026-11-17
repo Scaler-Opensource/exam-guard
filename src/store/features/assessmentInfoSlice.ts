@@ -5,6 +5,7 @@ const initialState: AssessmentInfoState = {
   userName: '',
   assessmentName: '',
   logoUrl: null,
+  screenShareMockUrl: null,
   proctor: null,
   token: null,
   identity: null,
@@ -37,6 +38,7 @@ const assessmentInfoSlice = createSlice({
         userName: action.payload.userName,
         assessmentName: action.payload.assessmentName,
         logoUrl: action.payload.logoUrl ?? null,
+        screenShareMockUrl: action.payload.screenShareMockUrl ?? null,
       };
     },
     setProctor: (state, action) => {
@@ -60,3 +62,6 @@ export default assessmentInfoSlice.reducer;
 
 export const selectProctor = (state: { assessmentInfo: AssessmentInfoState }) =>
   state.assessmentInfo.proctor;
+
+export const selectScreenShareMockUrl = (state: { assessmentInfo: AssessmentInfoState }) =>
+  state.assessmentInfo.screenShareMockUrl;

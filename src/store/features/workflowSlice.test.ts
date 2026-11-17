@@ -111,4 +111,18 @@ describe('assessmentInfoSlice', () => {
     }));
     expect(state.logoUrl).toBeNull();
   });
+
+  it('carries the host-supplied screen-share mock url from init', () => {
+    const state = assessmentInfoReducer(undefined, setAssessmentInfo({
+      userName: 'Aswanth', assessmentName: 'Test Contest', screenShareMockUrl: 'https://cdn.example/mock.png',
+    }));
+    expect(state.screenShareMockUrl).toBe('https://cdn.example/mock.png');
+  });
+
+  it('falls back to a null screen-share mock url when the host omits it', () => {
+    const state = assessmentInfoReducer(undefined, setAssessmentInfo({
+      userName: 'Aswanth', assessmentName: 'Test Contest',
+    }));
+    expect(state.screenShareMockUrl).toBeNull();
+  });
 });
