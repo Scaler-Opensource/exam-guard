@@ -48,7 +48,7 @@ Follow these steps to resolve common camera issues during proctoring.
 
 💻 **For Safari (Mac)** 
 
-![enter image description here](https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/114/874/original/image_%286%29.png?1742373881) 
+![enter image description here](https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/253/975/original/camera-guide-safari-debranded.png?1794982732) 
   - `Safari > Settings > Websites > Camera` → Ensure the website has access.  
   - Choose **Apple Menu > System Settings > Privacy & Security**.  
   - Click **Camera** and ensure access is turned **ON** for the browser.  
