@@ -5,12 +5,16 @@ import { Button } from '@/ui/Button';
 import { ERROR_MESSAGES } from '@/constants/screenshot';
 import { setSubStepError, selectSubStep } from '@/store/features/workflowSlice';
 import { screenshareCleanup } from '@/utils/screenshotV2';
-import { selectProctor } from '@/store/features/assessmentInfoSlice';
+import { selectProctor, selectScreenShareMockUrl } from '@/store/features/assessmentInfoSlice';
 import { useAppSelector, useAppDispatch } from '@/hooks/reduxhooks';
+
+// Bundled screen-share illustration; host apps override it via assessmentInfo.screenShareMockUrl.
+const DEFAULT_SCREEN_SHARE_MOCK = 'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/662/original/screen-share-mock.png?1733837502';
 
 export default function ScreenShareCard() {
   const dispatch = useAppDispatch();
   const proctor = useAppSelector((state) => selectProctor(state));
+  const screenShareMockUrl = useAppSelector((state) => selectScreenShareMockUrl(state));
   const screenShareState = useAppSelector((state) =>
     selectSubStep(state, 'screenShare', 'screenShare'),
   );
@@ -55,7 +59,7 @@ export default function ScreenShareCard() {
           {screenShareState.status !== 'completed' && (
             <div className='flex-1 py-16 pl-16 max-w-xl'>
               <img
-                src={'https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/099/662/original/screen-share-mock.png?1733837502'}
+                src={screenShareMockUrl || DEFAULT_SCREEN_SHARE_MOCK}
                 alt='Screen Share Mock'
                 className='w-full object-contain'
               />
@@ -82,7 +86,7 @@ export default function ScreenShareCard() {
             </p>
             {screenShareState.status === 'completed' ? (
               <div className='flex items-center justify-between p-4 bg-gray-100 rounded-2xl text-sm'>
-                <span>scaler.com is sharing your screen</span>
+                <span>{window.location.hostname || 'scaler.com'} is sharing your screen</span>
                 <div className='flex gap-2'>
                   <Button onClick={handleStop} className='text-red-500' size='xs' variant='secondary'>
                     Stop Sharing
