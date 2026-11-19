@@ -25,7 +25,9 @@ import { CameraSignals, cameraSignals } from '@/utils/cameraIntegrity';
 import { WorkflowStepKey } from '@/types/workflowTypes';
 import ConsentCard from './ConsentCard';
 import LivenessFrame, { LivenessOutcome } from './LivenessFrame';
-import { livenessErrorReportFileName, livenessErrorReportText } from '@/utils/livenessErrorReport';
+import {
+  IdentityFailure, identityErrorReportFileName, identityErrorReportText, parseErrorDetail,
+} from '@/utils/identityErrorReport';
 import PositioningModal from './PositioningModal';
 import {
   CameraFrame, CheckRows, FixBox, HelpLine, IdentityCard, IdlePanel, IllustrationPanel, InfoRow, PanelHeading, Split, TwoColumns,
@@ -73,8 +75,8 @@ const IdentityVerificationStep = () => {
 
   const [status, setStatus] = useState<IdentityStatus | null>(null);
   const [error, setError] = useState('');
-  // The last face check failure, for the candidate to download and send to support.
-  const [failure, setFailure] = useState<Extract<LivenessOutcome, { type: 'error' }> & { at: Date } | null>(null);
+  // The last failure on this device (camera, upload, request, liveness), for the candidate to download for support.
+  const [failure, setFailure] = useState<IdentityFailure | null>(null);
   const [busy, setBusy] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -178,8 +180,10 @@ const IdentityVerificationStep = () => {
         streamRef.current = mediaStream;
         if (videoRef.current) videoRef.current.srcObject = mediaStream;
       })
-      .catch(() => {
-        if (!cancelled) setError('We could not access your camera. Allow camera access and try again.');
+      .catch((err) => {
+        if (cancelled) return;
+        setError('We could not access your camera. Allow camera access and try again.');
+        setFailure({ stage: 'camera', code: err?.name || 'camera_error', detail: parseErrorDetail(err), at: new Date() });
       });
     return () => {
       cancelled = true;
@@ -208,6 +212,7 @@ const IdentityVerificationStep = () => {
       applyStatus(identity);
     } catch (err) {
       setError(errorText(err instanceof IdentityApiError ? err.message : 'request_failed'));
+      noteFailure('request', err, 'request_failed');
       setBusy(false);
       return;
     }
@@ -230,6 +235,7 @@ const IdentityVerificationStep = () => {
       setLiveness({ url: livenessUrl, nonce });
     } catch (err) {
       setError(errorText(err instanceof IdentityApiError ? err.message : 'request_failed'));
+      noteFailure('request', err, 'request_failed');
       // An outage is recorded server-side; the fresh status shows whether the template lets them continue.
       refreshStatus();
     } finally {
@@ -241,22 +247,39 @@ const IdentityVerificationStep = () => {
     setLiveness(null);
     if (outcome.type === 'error') {
       setError(errorText(outcome.code, outcome.message));
-      setFailure({ ...outcome, at: new Date() });
+      setFailure({
+        stage: 'liveness', code: outcome.code, message: outcome.message, detail: outcome.detail, at: new Date(),
+      });
     }
     refreshStatus();
   }, [refreshStatus]);
 
-  const downloadFailure = () => {
-    if (!failure) return;
-    const text = livenessErrorReportText({
-      ...failure, userAgent: navigator.userAgent, page: `${window.location.origin}${window.location.pathname}`,
+  function noteFailure(stage: IdentityFailure['stage'], err: unknown, fallback: string) {
+    const code = err instanceof IdentityApiError ? err.message : fallback;
+    setFailure({ stage, code, message: errorText(code), detail: parseErrorDetail(err), at: new Date() });
+  }
+
+  const download = (report: IdentityFailure) => {
+    const text = identityErrorReportText(report, {
+      userAgent: navigator.userAgent, page: `${window.location.origin}${window.location.pathname}`,
     });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
-    link.download = livenessErrorReportFileName(failure.at);
+    link.download = identityErrorReportFileName(report.at);
     link.click();
     URL.revokeObjectURL(link.href);
   };
+  // A face match the service rejected (or couldn't run): its reason and reference ID come from the status.
+  const serviceFailure = (): IdentityFailure => ({
+    stage: 'face_match',
+    code: [status?.status, status?.reason].filter(Boolean).join(':') || state,
+    message: [screen.title, screen.body].filter(Boolean).join(' - '),
+    referenceId: screen.referenceId,
+    at: new Date(),
+  });
+  const downloadButton = (report: () => IdentityFailure) => (
+    <Button variant='outline' size='lg' onClick={() => download(report())}>Download error details</Button>
+  );
 
   const handleCapture = async () => {
     const video = videoRef.current;
@@ -270,6 +293,7 @@ const IdentityVerificationStep = () => {
       }));
     } catch (err) {
       setError(errorText(err instanceof IdentityApiError ? err.message : 'upload_failed'));
+      noteFailure('upload', err, 'upload_failed');
     } finally {
       setBusy(false);
     }
@@ -363,9 +387,7 @@ const IdentityVerificationStep = () => {
         </Button>
         {guideButton}
         {continueButton('Continue without verifying')}
-        {failure && error && (
-          <Button variant='outline' size='lg' onClick={downloadFailure}>Download error details</Button>
-        )}
+        {failure && error && downloadButton(() => failure)}
       </div>
     );
   } else if (state === 'capture') {
@@ -401,6 +423,7 @@ const IdentityVerificationStep = () => {
         </Button>
         {guideButton}
         {continueButton('Continue without verifying')}
+        {failure && error && downloadButton(() => failure)}
       </div>
     );
   } else if (state === 'analysing') {
@@ -469,6 +492,7 @@ const IdentityVerificationStep = () => {
         {screen.canRetry && <Button variant='primary' size='lg' onClick={handleRetry}>Try again</Button>}
         {guideButton}
         {continueButton()}
+        {downloadButton(serviceFailure)}
       </div>
     );
   } else if (state === 'blocked') {
@@ -487,7 +511,10 @@ const IdentityVerificationStep = () => {
       </IdentityCard>
     );
     footer = (
-      <Button variant='outline' size='lg' onClick={refreshStatus}>Check again</Button>
+      <div className='flex items-center gap-6'>
+        <Button variant='outline' size='lg' onClick={refreshStatus}>Check again</Button>
+        {downloadButton(serviceFailure)}
+      </div>
     );
   } else if (state === 'service_error') {
     card = (
@@ -507,6 +534,7 @@ const IdentityVerificationStep = () => {
         <Button variant='primary' size='lg' onClick={handleRetry}>Try again</Button>
         <Button variant='outline' size='lg' onClick={refreshStatus}>Check again</Button>
         {continueButton()}
+        {downloadButton(serviceFailure)}
       </div>
     );
   }

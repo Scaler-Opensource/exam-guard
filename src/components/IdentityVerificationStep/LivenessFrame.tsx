@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-import { LivenessErrorDetail, parseLivenessDetail } from '@/utils/livenessErrorReport';
+import { ErrorDetail, parseErrorDetail } from '@/utils/identityErrorReport';
 
 // The proctoring-hosted liveness page in an iframe. Exam-guard only hands it the nonce; the page
 // gets the stream credentials from the proctoring service itself, and the result is read by the
@@ -9,7 +9,7 @@ const PROTOCOL_VERSION = 1;
 
 export type LivenessOutcome =
   | { type: 'complete' }
-  | { type: 'error'; code: string; message?: string; detail?: LivenessErrorDetail }
+  | { type: 'error'; code: string; message?: string; detail?: ErrorDetail }
   | { type: 'close' };
 
 interface Props {
@@ -42,7 +42,7 @@ const LivenessFrame = ({
           type: 'error',
           code: String(data.code || 'liveness_error'),
           message: data.message ? String(data.message) : undefined,
-          detail: parseLivenessDetail(data.detail),
+          detail: parseErrorDetail(data.detail),
         });
       } else if (data.type === 'close') {
         onDone({ type: 'close' });
