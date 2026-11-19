@@ -1,4 +1,4 @@
-# **Scaler's Troubleshooting Guide: Laptop Camera Issues in Proctoring**
+# **Troubleshooting Guide: Laptop Camera Issues in Proctoring**
 
 Follow these steps to resolve common camera issues during proctoring.
 
@@ -43,12 +43,12 @@ Follow these steps to resolve common camera issues during proctoring.
   - Click the **camera icon** in the address bar → **Site settings** → Set **Camera** to **Allow**.  
   - Under **Default Behavior,** select **Sites can ask to use your camera**.  
   - Disable **Ask before accessing**
-  - If present, under **Allowed to use your camera,** next to `https://proctoring.scaler/`, click **Delete**.  
-  - Refresh the Scaler proctoring page and grant camera access when prompted.  
+  - If present, under **Allowed to use your camera,** next to the proctoring site's entry, click **Delete**.  
+  - Refresh the proctoring page and grant camera access when prompted.  
 
 💻 **For Safari (Mac)** 
 
-![enter image description here](https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/114/874/original/image_%286%29.png?1742373881) 
+![enter image description here](https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/253/975/original/camera-guide-safari-debranded.png?1794982732) 
   - `Safari > Settings > Websites > Camera` → Ensure the website has access.  
   - Choose **Apple Menu > System Settings > Privacy & Security**.  
   - Click **Camera** and ensure access is turned **ON** for the browser.  
@@ -110,7 +110,7 @@ Follow these steps to resolve common camera issues during proctoring.
 ---
 
 ## **Step 7: Test Camera Preview**  
-🔄 **Reload the Scaler proctoring page**.  
+🔄 **Reload the proctoring page**.  
 📷 **Test the camera using:**  
   - **Windows:** Open the **Camera** app.  
   - **Mac:** Use **FaceTime** or **Photo Booth**.  
@@ -124,4 +124,4 @@ Follow these steps to resolve common camera issues during proctoring.
 
 ---
 
-✅ **If the issue persists, contact Scaler support for further assistance.**  
+✅ **If the issue persists, contact support for further assistance.**  

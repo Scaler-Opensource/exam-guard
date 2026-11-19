@@ -4,7 +4,7 @@ import reducer, {
   setActiveStep,
   setOnWorkflowComplete,
 } from '@/store/features/workflowSlice';
-import assessmentInfoReducer, { fetchToken } from '@/store/features/assessmentInfoSlice';
+import assessmentInfoReducer, { fetchToken, setAssessmentInfo } from '@/store/features/assessmentInfoSlice';
 import { IdentityPolicy } from '@/utils/identityVerification';
 import { WorkflowState } from '@/types/workflowTypes';
 
@@ -106,5 +106,33 @@ describe('assessmentInfoSlice', () => {
     const state = assessmentInfoReducer(undefined, tokenFetched({ mode: 'advisory', required: false }));
     expect(state.token).toBe('jwt');
     expect(state.identity).toEqual({ mode: 'advisory', required: false });
+  });
+
+  it('carries the host-supplied logo url from init', () => {
+    const state = assessmentInfoReducer(undefined, setAssessmentInfo({
+      userName: 'Aswanth', assessmentName: 'Test Contest', logoUrl: 'https://cdn.example/brand.png',
+    }));
+    expect(state.logoUrl).toBe('https://cdn.example/brand.png');
+  });
+
+  it('falls back to a null logo url when the host omits it', () => {
+    const state = assessmentInfoReducer(undefined, setAssessmentInfo({
+      userName: 'Aswanth', assessmentName: 'Test Contest',
+    }));
+    expect(state.logoUrl).toBeNull();
+  });
+
+  it('carries the host-supplied screen-share mock url from init', () => {
+    const state = assessmentInfoReducer(undefined, setAssessmentInfo({
+      userName: 'Aswanth', assessmentName: 'Test Contest', screenShareMockUrl: 'https://cdn.example/mock.png',
+    }));
+    expect(state.screenShareMockUrl).toBe('https://cdn.example/mock.png');
+  });
+
+  it('falls back to a null screen-share mock url when the host omits it', () => {
+    const state = assessmentInfoReducer(undefined, setAssessmentInfo({
+      userName: 'Aswanth', assessmentName: 'Test Contest',
+    }));
+    expect(state.screenShareMockUrl).toBeNull();
   });
 });
