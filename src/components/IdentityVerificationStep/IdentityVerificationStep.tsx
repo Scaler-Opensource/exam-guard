@@ -25,6 +25,7 @@ import { CameraSignals, cameraSignals } from '@/utils/cameraIntegrity';
 import { WorkflowStepKey } from '@/types/workflowTypes';
 import ConsentCard from './ConsentCard';
 import LivenessFrame, { LivenessOutcome } from './LivenessFrame';
+import { livenessErrorReportFileName, livenessErrorReportText } from '@/utils/livenessErrorReport';
 import PositioningModal from './PositioningModal';
 import {
   CameraFrame, CheckRows, FixBox, HelpLine, IdentityCard, IdlePanel, IllustrationPanel, InfoRow, PanelHeading, Split, TwoColumns,
@@ -72,6 +73,8 @@ const IdentityVerificationStep = () => {
 
   const [status, setStatus] = useState<IdentityStatus | null>(null);
   const [error, setError] = useState('');
+  // The last face check failure, for the candidate to download and send to support.
+  const [failure, setFailure] = useState<Extract<LivenessOutcome, { type: 'error' }> & { at: Date } | null>(null);
   const [busy, setBusy] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -236,9 +239,24 @@ const IdentityVerificationStep = () => {
 
   const handleLivenessDone = useCallback((outcome: LivenessOutcome) => {
     setLiveness(null);
-    if (outcome.type === 'error') setError(errorText(outcome.code, outcome.message));
+    if (outcome.type === 'error') {
+      setError(errorText(outcome.code, outcome.message));
+      setFailure({ ...outcome, at: new Date() });
+    }
     refreshStatus();
   }, [refreshStatus]);
+
+  const downloadFailure = () => {
+    if (!failure) return;
+    const text = livenessErrorReportText({
+      ...failure, userAgent: navigator.userAgent, page: `${window.location.origin}${window.location.pathname}`,
+    });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+    link.download = livenessErrorReportFileName(failure.at);
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
 
   const handleCapture = async () => {
     const video = videoRef.current;
@@ -345,6 +363,9 @@ const IdentityVerificationStep = () => {
         </Button>
         {guideButton}
         {continueButton('Continue without verifying')}
+        {failure && error && (
+          <Button variant='outline' size='lg' onClick={downloadFailure}>Download error details</Button>
+        )}
       </div>
     );
   } else if (state === 'capture') {
