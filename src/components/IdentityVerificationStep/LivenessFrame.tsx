@@ -1,11 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 
+import { ErrorDetail, parseErrorDetail } from '@/utils/identityErrorReport';
+
 // The proctoring-hosted liveness page in an iframe. Exam-guard only hands it the nonce; the page
 // gets the stream credentials from the proctoring service itself, and the result is read by the
 // service from Rekognition, so these messages only drive the UI.
 const PROTOCOL_VERSION = 1;
 
-export type LivenessOutcome = { type: 'complete' } | { type: 'error'; code: string; message?: string } | { type: 'close' };
+export type LivenessOutcome =
+  | { type: 'complete' }
+  | { type: 'error'; code: string; message?: string; detail?: ErrorDetail }
+  | { type: 'close' };
 
 interface Props {
   url: string;
@@ -33,7 +38,12 @@ const LivenessFrame = ({
       } else if (data.type === 'complete') {
         onDone({ type: 'complete' });
       } else if (data.type === 'error') {
-        onDone({ type: 'error', code: String(data.code || 'liveness_error'), message: data.message ? String(data.message) : undefined });
+        onDone({
+          type: 'error',
+          code: String(data.code || 'liveness_error'),
+          message: data.message ? String(data.message) : undefined,
+          detail: parseErrorDetail(data.detail),
+        });
       } else if (data.type === 'close') {
         onDone({ type: 'close' });
       }
