@@ -233,6 +233,9 @@ class ScreenShareMonitor {
     interval,
     resizeDimensions,
   }) {
+    this.captureArgs = {
+      onSuccess, onFailure, interval, resizeDimensions,
+    };
     switch (this.strategy) {
       case STRATEGIES.RETRY_STRATEGY:
         this.useRetryStrategy({
@@ -270,6 +273,15 @@ class ScreenShareMonitor {
         });
         break;
     }
+  }
+
+  // Restarts a running capture at a new interval, keeping the same stream and callbacks.
+  restartScreenshotCapture(interval) {
+    if (!this.mediaStream || !this.captureArgs) return;
+
+    this.capturedIntervals.forEach((id) => clearInterval(id));
+    this.capturedIntervals = [];
+    this.startScreenshotCapture({ ...this.captureArgs, interval });
   }
 
   stopScreenShare() {
@@ -361,10 +373,14 @@ export async function screenshareRequestHandler({ disableScreenshot = false }) {
     onScreenShareEnd: this.handleScreenShareEnd.bind(this),
     onScreenshotSuccess: this.handleScreenshotSuccess.bind(this),
     onScreenshotFailure: this.handleScreenshotFailure.bind(this),
-    frequency: this.screenshotConfig.frequency,
+    frequency: this.screenshotFrequency(),
     resizeDimensions: this.screenshotConfig.resizeTo,
     disableScreenshot,
   });
+}
+
+export function restartScreenshotCapture(frequency) {
+  screenShareMonitor.restartScreenshotCapture(frequency);
 }
 
 export function screenshareCleanup() {

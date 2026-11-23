@@ -24,6 +24,8 @@ export interface ProctorConfig {
   snapshotConfig?: {
     enabled?: boolean;
     frequency?: number;
+    // Used instead of frequency while the network is slow (needs networkConfig.enabled).
+    slowNetworkFrequency?: number;
     resizeTo?: any;
     optional?: boolean;
     [key: string]: any;
@@ -31,6 +33,8 @@ export interface ProctorConfig {
   screenshotConfig?: {
     enabled?: boolean;
     frequency?: number;
+    // Used instead of frequency while the network is slow (needs networkConfig.enabled).
+    slowNetworkFrequency?: number;
     resizeTo?: any;
     [key: string]: any;
   };
