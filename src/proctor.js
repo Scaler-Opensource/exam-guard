@@ -25,6 +25,7 @@ import {
   screenshareRequestHandler,
   isScreenShareValid,
   screenshareCleanup,
+  restartScreenshotCapture,
 } from './utils/screenshotV2';
 import detectBrowserBlur from './utils/violations/browserBlur';
 import detectCopyPasteCut from './utils/violations/copyPasteCut';
@@ -62,6 +63,9 @@ import { reportCameraChange } from './services/identityVerificationService';
 import { cameraSignals } from './utils/cameraIntegrity';
 import CompatibilityWorker from './workers/compatibility.worker';
 import NetworkWorker from './workers/network.worker';
+
+// Consecutive network readings (networkConfig.interval apart) needed to switch capture rates.
+const SLOW_NETWORK_READINGS = 3;
 
 export default class Proctor {
   constructor({
@@ -400,6 +404,8 @@ export default class Proctor {
 
     this.networkWorker = null;
     this.lastNetworkAlertTimestamp = 0;
+    this.slowNetworkActive = false;
+    this.slowNetworkStreak = 0;
   }
 
   async initializeProctoring() {
@@ -562,6 +568,43 @@ export default class Proctor {
     } else {
       closeModal(true);
     }
+
+    this.updateSlowNetworkCapture(Boolean(isBadReading));
+  }
+
+  // Moves capture to the slowNetworkFrequency rates after SLOW_NETWORK_READINGS bad readings
+  // in a row, and back after as many good ones. Does nothing unless a slow rate is configured.
+  updateSlowNetworkCapture(isBadReading) {
+    const { slowNetworkFrequency: slowSnapshot } = this.snapshotConfig;
+    const { slowNetworkFrequency: slowScreenshot } = this.screenshotConfig;
+    if (!slowSnapshot && !slowScreenshot) return;
+
+    const agrees = isBadReading === this.slowNetworkActive;
+    this.slowNetworkStreak = agrees ? 0 : this.slowNetworkStreak + 1;
+    if (this.slowNetworkStreak < SLOW_NETWORK_READINGS) return;
+
+    this.slowNetworkActive = isBadReading;
+    this.slowNetworkStreak = 0;
+    if (!this.proctoringInitialised || window.isTestEnding) return;
+
+    if (this.snapshotIntervalId) {
+      this.snapshotIntervalId = setupSnapshotCapture({
+        onSnapshotFailure: this.handleSnapshotFailure.bind(this),
+        frequency: this.snapshotFrequency(),
+        resizeDimensions: this.snapshotConfig.resizeTo,
+      });
+    }
+    restartScreenshotCapture(this.screenshotFrequency());
+  }
+
+  snapshotFrequency() {
+    return (this.slowNetworkActive && this.snapshotConfig.slowNetworkFrequency)
+      || this.snapshotConfig.frequency;
+  }
+
+  screenshotFrequency() {
+    return (this.slowNetworkActive && this.screenshotConfig.slowNetworkFrequency)
+      || this.screenshotConfig.frequency;
   }
 
   stopNetworkMonitoring() {
@@ -859,7 +902,7 @@ export default class Proctor {
     if (this.proctoringInitialised) {
       this.snapshotIntervalId = setupSnapshotCapture({
         onSnapshotFailure: this.handleSnapshotFailure.bind(this),
-        frequency: this.snapshotConfig.frequency,
+        frequency: this.snapshotFrequency(),
         resizeDimensions: this.snapshotConfig.resizeTo,
       });
     }
